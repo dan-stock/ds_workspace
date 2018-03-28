@@ -1,0 +1,210 @@
+<!-- ################################################  -->
+Allgemeines
+<!-- ################################################  -->
+
+<!--   -->  
+Damit können ganze Passagen ausgeklammert werden und werden vom Browser nicht mehr angezeigt. Sehr schöne Möglichkeit, um Dinge auszuprobieren!!!
+So werden Kommentare im HTML-Code vermerkt, die auf der im Browser angezeigten Seite nicht sichtbar, aber beim Erstellen und Erweitern hilfreich sind.  
+
+<hr />    
+Damit können Trennlinien eingezogen werden. Farbe, Länge und Stärke können bestimmt werden.
+(e: hr = horizontal ruler = horizontale Linie) 
+
+<html>  </html>  
+Anfang und Ende des HTML-Codes. Ihre neue Spielwiese :-)
+(e: html=hypertext markup language) 
+
+<head>  </head>  
+Der Kopfbereich, in dem allgemeine Angaben gemacht werden, die nicht im Browserfenster angezeigt werden.
+(e: head=kopf) 
+
+<body>  </body>  
+ab hier kommt unser eigentlicher Inhalt, der im Gegensatz zum head-Bereich im Browserfenster angezeigt wird.
+(e: body=Körper) 
+
+<title>  </title>  
+Wichtig! Titel hat mehrere wichtige Funktionen:
+- Titelzeile des Anzeigefensters
+- Namen von gesetzten Lesenzeichen/Bookmarks
+- Liste der bereits besuchten Seiten
+- und für die Eintragung bei Suchmaschinen 
+(e: title=Titel) 
+
+<!-- ################################################  -->
+Schriftattribute
+<!-- ################################################  -->
+
+<b>  </b>  
+Schrift wird fett angezeigt
+(e: b=bold=fett) 
+
+<i>  </i>  
+kursive Schrift
+(e: i=italic) 
+
+<u>  </u>  
+unterstrichene Schrift - sehr mit Vorsicht zu genießen,
+da der Surfer bei unterstrichenen Passagen von Links ausgeht!
+(e: u=underlined=unterstrichen) 
+
+<sup>  </sup>  
+hochgestellte Schrift, z.B. 0C
+(e: sup=superscript, zu deutsch etwa Hochstellung) 
+
+<sub>  </sub>  
+tiefgestellte Schrift, z.B. H2O
+(e: sub=subscript, zu deutsch ungefaehr Tiefstellung) 
+
+<tt>  </tt>  
+bewirkt Schrift mit gleichen Abständen (dicktengleich)
+(e: tt=teletyper=Fernschreiber) 
+
+<!-- ################################################  -->
+Schriftgröße 
+<!-- ################################################  -->
+<h1> .. <h6>  </h1> .. </h6>  
+Leitet eine Überschrift ein (reagiert wie Absatz!) x kann einen Wert von 1 bis 6 annehmen. Die größte Überschrift ist 1, die kleinste 6.
+(e: h=heading=Überschrift) 
+
+<h1 
+.. 
+align=left
+align=center
+align=right
+align=justify
+</h1> 
+Überschriften können wie Absätzen ausgerichtet werden (jetzt in CSS umsetzen)  
+
+<small>  </small>  
+Macht die Schrift um einen Schritt kleiner
+(e: small=kleiner) 
+
+<big>  </big>  
+Macht die Schrift um einen Schritt größer
+(e: big=größer)
+ 
+<font size=...>  < /font >  
+Bestimmen Sie hier die Schriftgröße von 1 - 7. Die Angaben sind relativ. Die Normalschriftgröße ist 3. Größere Schrift bekommt man mit 4,5,6 oder 7. Kleinere Schrift mit 1 oder 2.
+(e: font size = Schriftgröße) 
+
+<!-- ################################################  -->
+Absatzaufbau
+<!-- ################################################  -->
+<p> align="left"
+align="center"
+align="right"
+align="justify"
+ </p> 
+ Absatzbeginn - vor und nach dem Absatz wird automatisch Platz gehalten
+(e: p=paragraph)
+(e: align=Ausrichtung) 
+
+<center>  </center>  
+zentrierte Ausrichtung (oft bei Gedichten)
+(e: center=zentriert) 
+
+<br />   erzwungener Zeilenumbruch (Zeilenende)
+(e: br=break=Umbruch) 
+
+<nobr>  </nobr>  
+erzwungener Zusammenhalt, was z.B. für Wortgebilde wie "V 4.1" geschickt ist.
+(e: nobr=nobreak=kein Umbruch)
+ 
+<blockquote>  </blockquote>  
+Hiermit können Zitate aufgenommen werden. Tag verhält sich wie Absatztag, wobei das aussehen vom Browser definiert wird! Meistens eingerückt, auf jeden Fall anders formatiert wie Rest.
+(e: blockquote=geblocktes Zitat) 
+
+<!-- ################################################  -->
+Aufzählungen
+<!-- ################################################  -->
+<li>  </li>  
+Bei allen Aufzählungen (nächste 2 Punkte) müssen die Einzelpunkte durch diesen Tag gekennzeichnet sein.
+(e: li = list item = Listeneintrag )
+ 
+<ul>  </ul>  
+Leitet eine Aufzählugsliste ein. Wie der Spiegelstrich dargestellt wird, bestimmt der WWW-Browser. (weiteres siehe TAG <li> !)
+(e: ul=unordered list=unsortierte Liste) 
+
+<ol  > ... </ol>
+Leitet eine nummerierte Liste ein - Attribut ist erforderlich!
+(e: ol=ordered list=numerierte Liste) 
+
+<ol start="1" type="1"> </ol>
+start="1" - aber welcher Einheit gestartet werden soll
+
+<ol start="1" type="I">	</ol>
+type="1" - für numerische Liste
+
+<ol start="1" type="i">	</ol>
+type="i" - Liste mit kleinen römischen Ziffern
+
+<ol start="1" type="A">	</ol>
+type="A" - Liste mit Buchstaben
+
+<ol start="1" type="a">	</ol>
+type="a" - Liste mit kleinen Buchstaben
+ 
+<!-- ################################################  -->
+Verweise [Links]
+<!-- ################################################  -->
+<a  href="..."> Ihre Beschreibung dazu  </a>  
+für interne & externe Linkes. "Ihre Beschreibung" wird später im Browser als so genannter Link angezeigt und kann angeklickt werden.
+(e: a=anchor=Anker)
+(e: href=hyper reference=Hypertext-Referenz
+ 
+<a  href="start.htm"> </a>  
+interner Link 
+
+<a  href="http://www.uxl.de/"> </a>  
+externe Link 
+
+<a  href="http://www.uxl.de/" target="_blank"> </a>  
+für externen Link wird neue Browserinstanz aufgemacht.
+ 
+<a  href="#xy">Sprung nach xy </a>  
+Sprungmarke (wird durch # gekennzeichnet) zu einem bestimmten Punkt, hier "xy". Der Punkt muss definiert werden - dazu nächsten Tag anschauen.
+ 
+<a  name="xy">irgendwas </a>  
+dieser Punkt, hier "xy", soll direkt anspringbar sein. "irgendwas" darf nicht leer bleiben,.
+ 
+<a  href="mailto:axl@uxl.de"> axl@uxl.de </a>  
+So kann eine E-Mail-Adresse eingegeben werden. Durch anklicken öffnet sich das E-Mail-Prg. (sofern installiert) und die E-Mail-Adresse ist bereits eingegeben.
+(e: mailto= schicke nach 
+
+<!-- ################################################  -->
+Farben in HTML
+<!-- ################################################  -->
+<body  bgcolor="...">   
+ Hintergrundfarbe der ganzen Seite 
+
+<font  color="...">farbiges </font> 
+Farbe der Schrift 
+
+<table  bgcolor="..."> </table> 
+Hintergrundfarbe Tabellen 
+
+<td  bgcolor="..."> </td> 
+Hintergrundfarbe Tabellenzelle (geht auch für Tabellenzeile bei <tr>) 
+
+Farbnamen Hex + Farbe  
+black 	#000000  
+maroon 	#800000  
+green 	#008000  
+olive 	#808000  
+navy 	#000080  
+purple 	#800080  
+teal 	#008080  
+gray 	#808080  
+silver 	#c0c0c0  
+red 	#FF0000  
+lime 	#00FF00  
+yellow 	#FFFF00  
+blue 	#0000FF  
+fuchsia #FF00FF  
+aqua 	#00FFFF  
+white 	#FFFFFF  
+
+
+
+
+what's truly important: Family, friends, health, career, and happiness. 
