@@ -1,0 +1,2562 @@
+#!/bin/bash 
+
+. /home/$USER/.bashrc
+
+########################
+sat6_patch_status(){
+
+  
+## get kernal 
+uname -r
+KERN=`uname -r`
+
+## get uptime
+date
+uptime 
+## get time kernal was patched
+grep "kernel-"$KERN /var/log/yum.log
+
+## get the errates still open
+/usr/local/bin/sat6_get_erratas.sh
+
+
+##########################
+cat /ConfigData/data/sat6-px-host-paramaters_mod.data |cut -f12 -d';'|sort -u # patch info
+
+##########################
+echo "" >> mig.hosts
+
+echo "[hg_${s}_rh${r}_${a}]"
+cat ~/var/hosts-2-migrate.txt |grep $r |grep $a|grep ": $s"
+
+for a in $A; do 
+  echo "" >> mig.hosts
+  echo "[hg_${s}_rh${r}_${a}]" >> mig.hosts
+  cat ~/var/hosts-2-migrate.txt |grep $r |grep $a|grep ": $s"|cut -f1 -d: >> mig.hosts
+done 
+
+vim mig.hosts
+
+############################
+## host-install-provision.py
+hammer host set-parameter --host ${NAME}.corp.int --name h_reinstall --value true
+/opt/diba-soe/bin/host-install-provision.py --name ${NAME} --mac ${MAC} --hostgroup hg_t_rhel7_bigdata -r
+/opt/diba-soe/bin/host-install-provision.py --name ${NAME} --ip ${IP} --mac ${MAC} --hostgroup hg_t_rhel7_bigdata --dns ${IP} --gateway ${GW} --netmask 255.255.255.0 -v
+
+GW=${IP}
+
+
+############################
+journalctl -xe
+
+
+############################
+
+hg_p_rhel6_appl
+hg_p_rhel6_bigdata
+hg_p_rhel6_build
+hg_p_rhel6_grid-control
+hg_p_rhel6_j2ee
+hg_p_rhel6_oradeploy
+hg_p_rhel6_sap
+hg_p_rhel6_uc4as
+hg_p_rhel6_voiceodbc
+hg_p_rhel7_appl
+hg_p_rhel7_bigdata
+hg_p_rhel7_j2ee
+hg_p_rhel7_mbsql
+hg_p_rhel7_sapas
+hg_p_rhel7_saphana
+hg_p_rhel7_satcapsule
+hg_q_rhel6_appl
+hg_q_rhel6_bigdata
+hg_q_rhel6_j2ee
+hg_q_rhel6_sap
+hg_q_rhel7_appl
+hg_q_rhel7_bigdata
+hg_q_rhel7_j2ee
+hg_q_rhel7_sapas
+hg_q_rhel7_saphana
+hg_t_rhel6_appl
+hg_t_rhel6_bigdata
+hg_t_rhel6_build
+hg_t_rhel6_j2ee
+hg_t_rhel6_oradeploy
+hg_t_rhel6_sap
+hg_t_rhel6_uc4as
+hg_t_rhel6_voiceodbc
+hg_t_rhel7_appl
+hg_t_rhel7_bigdata
+hg_t_rhel7_j2ee
+hg_t_rhel7_mbsql
+hg_t_rhel7_openshift
+hg_t_rhel7_sapas
+hg_t_rhel7_saphana
+
+akey_p_rhel6_appl
+akey_p_rhel6_bigdata
+akey_p_rhel6_build
+akey_p_rhel6_grid-control
+akey_p_rhel6_j2ee
+akey_p_rhel6_oradeploy
+akey_p_rhel6_sap
+akey_p_rhel6_uc4as
+akey_p_rhel6_voiceodbc
+akey_p_rhel7_appl
+akey_p_rhel7_bigdata
+akey_p_rhel7_j2ee
+akey_p_rhel7_mbsql
+akey_p_rhel7_sapas
+akey_p_rhel7_saphana
+akey_p_rhel7_satcapsule
+akey_q_rhel6_appl
+akey_q_rhel6_bigdata
+akey_q_rhel6_j2ee
+akey_q_rhel6_sap
+akey_q_rhel7_appl
+akey_q_rhel7_bigdata
+akey_q_rhel7_j2ee
+akey_q_rhel7_sapas
+akey_q_rhel7_saphana
+akey_t_rhel6_appl
+akey_t_rhel6_bigdata
+akey_t_rhel6_build
+akey_t_rhel6_j2ee
+akey_t_rhel6_oradeploy
+akey_t_rhel6_sap
+akey_t_rhel6_uc4as
+akey_t_rhel6_voiceodbc
+akey_t_rhel7_appl
+akey_t_rhel7_bigdata
+akey_t_rhel7_j2ee
+akey_t_rhel7_mbsql
+akey_t_rhel7_openshift
+akey_t_rhel7_sapas
+akey_t_rhel7_saphana
+
+#################
+## check the patch/update process. prefetch
+ansible -i $INV $GRP -a "uname -a" -o
+ansible -i $INV $GRP -a "uptime" -o
+ansible -i $INV $GRP -a "rpm -qa diba-release-os*" -o
+ansible -i $INV $GRP -a "yum -y erase diba-release*" -s
+
+ansible -i $INV $GRP -a "" -o
+ansible -i $INV $GRP -a "yum check-update" -o
+ansible -i $INV $GRP -a "/usr/local/bin/update.sh" -s 
+ansible -i $INV $GRP -a "ls -la /usr/local/bin/update.sh" -o
+ansible -i $INV $GRP -a "rhncfg-client list" -o
+ansible -i $INV $GRP -a "yum update --exclude=java-1.7.0-openjdk --exclude=java-1.7.0-openjdk-devel" -o
+
+ansible-playbook -i $INV /opt/sat-ansible/playbooks/job-rh-sys-falcon-migration.yml -s
+
+#####
+for host in `cat $INV|grep -i gf`;do hammer host info --name $host;sleep 2 ; done  
+for host in `cat $INV|grep -i gf`;do echo $host; done  
+
+################ 
+INV=px-auto-1
+/opt/diba-soe/bin/job-migrate.py -i $INV -a migration -u sarp
+/opt/diba-soe/bin/job-migrate.py -i $INV -a hg -u sarp
+./${INV}-script.sh
+
+ansible-playbook -i $INV ck_migration.yml -s
+ansible-playbook -i $INV ck_migration.yml -s > ${INV}-ck.output
+
+################ 
+## migration sat5-to-sat6
+wget http://$SERVER/pub/subscription-manager-1.18.10-1.el6.x86_64.rpm
+yum -y localinstall subscription-manager-1.18.10-1.el6.x86_64.rpm
+rpm -i http://$SERVER/pub/katello-ca-consumer-latest.noarch.rpm
+
+akey=akey_t_rhel6_j2ee
+akey=akey_q_rhel6_j2ee
+akey=akey_p_rhel6_j2ee
+akey=akey_t_rhel7_j2ee
+akey=akey_q_rhel7_j2ee
+akey=akey_p_rhel7_j2ee
+akey=akey_t_rhel6_appl
+akey=akey_q_rhel6_appl
+akey=akey_p_rhel6_appl
+akey=akey_t_rhel7_appl
+akey=akey_p_rhel7_appl
+akey=akey_t_rhel6_bigdata
+akey=akey_t_rhel7_bigdata
+akey=akey_q_rhel6_bigdata
+akey=akey_p_rhel7_sap
+akey=akey_q_rhel7_sap
+akey=akey_q_rhel7_saphana
+akey=akey_p_rhel7_saphana
+akey=akey_t_rhel7_sapas
+
+mv /etc/sysconfig/rhn/systemid /etc/sysconfig/rhn/systemid-disabled
+subscription-manager register --org=INGDiBa --activationkey=$akey
+subscription-manager attach
+subscription-manager repos --enable=rhel-*-satellite-tools-*-rpms
+yum -y install katello-agent
+yum -y install DiBa-certs.noarch
+chkconfig goferd on
+chkconfig rhsmcertd on 
+
+rhncfg-client list
+subscription-manager status
+subscription-manager identity
+yum -y erase diba-release*
+
+/bin/hammer host info --name $host
+
+hammer host delete --name $host
+
+###############
+######################################
+######################################
+## migration with ansible 
+
+echo $GRP;echo $hg;echo $akey
+ansible -i $INV $GRP --list-hosts
+ansible -i $INV $GRP -a "uname -a" -o 
+ansible -i $INV $GRP -a "df -h" -s
+
+ansible -i $INV $GRP -m yum -a "name=subscription-manager state=present" -s
+ansible -i $INV $GRP -a "yum -y install subscription-manager" -s 
+ansible -i $INV $GRP -a "rpm -qa subscription-manager" -o
+
+
+## katello-ca 61p=t, 62p=q, 63p=p
+ansible -i $INV $GRP -a "rpm -i http://$SERVER/pub/katello-ca-consumer-latest.noarch.rpm" -s
+ansible -i $INV $GRP -a "rpm -i http://$SERVER.corp.int/pub/katello-ca-consumer-latest.noarch.rpm" -s
+ansible -i $INV $GRP -a "rpm -i http://$SERVER.corp.int/pub/katello-ca-consumer-latest.noarch.rpm" -s
+ansible -i $INV $GRP -a "rpm -i http://$SERVER.corp.int/pub/katello-ca-consumer-latest.noarch.rpm" -s
+ansible -i $INV $GRP -a "rpm -qa katello-ca-*" -s -o
+
+ansible -i $INV $GRP -a "yum -y erase katello-ca-consumer-$SERVER.corp.int" -s 
+
+ansible -i $INV $GRP -a "mv /etc/sysconfig/rhn/systemid /etc/sysconfig/rhn/systemid-disabled" -s 
+ansible -i $INV $GRP -a "cat /etc/yum/pluginconf.d/rhnplugin.conf" -s 
+ansible -i $INV $GRP -m copy -a "src=~/var/rhnplugin.conf dest=/etc/yum/pluginconf.d/rhnplugin.conf" -s
+ansible -i $INV $GRP -a "rhncfg-client list" -s
+
+ansible -i $INV $GRP -a "subscription-manager register --org=INGDiBa --activationkey=${akey}" -s
+ansible -i $INV $GRP -a "subscription-manager release --set=7.2" -s
+ansible -i $INV $GRP -a "subscription-manager release --set=6Server" -s
+ansible -i $INV $GRP -a "subscription-manager identity" -s |grep FAIL |tee ~/var/ansible/log/$GRP.log
+
+h="$SERVER.corp.int,$SERVER.corp.int"
+ansible -i $INV $h -a "subscription-manager register --force --org=INGDiBa --activationkey=${akey}" -s
+ansible -i $INV $h -a "subscription-manager identity" -s
+
+ansible -i $INV $GRP -a "subscription-manager attach" -s
+## j2ee hosts 
+ansible -i $INV $GRP -a "subscription-manager attach --pool=8adc3c8f5eeb91e0015eec157ce50872 --pool=8adc3c8f5cc495db015cc970a5970280" -s 
+# "subscription-manager attach --pool=8adc3c8f5eeb91e0015eec157ce50872 --pool=8adc3c8f5cc495db015cc970a5970280"
+
+ansible -i $INV $GRP -a "subscription-manager repos --enable=rhel-*-satellite-tools-*-rpms" -s
+ansible -i $INV $GRP -a "yum -y install katello-agent" -s
+ansible -i $INV $GRP -m yum -a "name=katello-agent state=present" -s 
+ansible -i $INV $GRP -a "rpm -qa katello-agent" -o|tee ~/var/ansible/log/$GRP.log
+ 
+ansible -i $INV $GRP -a "chkconfig goferd on" -s 
+ansible -i $INV $GRP -a "chkconfig rhsmcertd on" -s 
+ansible -i $INV $GRP -a "yum -y erase diba-release*" -s
+
+## falcon
+## set migration_hosts: child
+vim $INV
+echo $GRP
+ansible-playbook -i $INV /opt/sat-ansible/playbooks/job-rh-sys-falcon-migration.yml -s
+
+## check the migration
+ansible -i $INV $GRP -a "subscription-manager list" -s
+ansible -i $INV $GRP -a "subscription-manager identity" -s
+ansible -i $INV $GRP -a "subscription-manager repos --list" -s
+ansible -i $INV $GRP -a "subscription-manager repos --list" -s|egrep "rc=|Name|Enable"
+ansible -i $INV $GRP -a "subscription-manager list --consumed" -s|egrep "corp|Subscription Name|Quantity"|grep -v Provides
+ansible -i $INV $GRP -a "yum -y --downloadonly update" -s 
+ansible -i $INV $GRP -a "rpm -qa diba-release-os*" -o 
+ansible -i $INV $GRP -a "rpm -qa subscription-manager" -o 
+ansible -i $INV $GRP -a "rpm -qa katello-agent" -o
+ansible -i $INV $GRP -a "yum check-update" -s 
+ansible -i $INV $GRP -a "/usr/local/bin/sat6_get_erratas.sh" -s 
+
+######################################
+## load inventory to hosts
+
+h=`ansible -i $INV $GRP --list-hosts|grep -v hosts`
+echo $h
+
+## set hg
+for host in $h; do echo $host $hg;  hammer host update --hostgroup=$hg --name $host --organization INGDiBa; done
+
+## set parameters
+for i in $h; do grep $i "/ConfigData/bin/tmp-migration-script.sh" >> ~/var/${i}-script.sh;done
+for i in $h; do echo $i; bash ~/var/${i}-script.sh;sleep 1; done
+
+for i in $h; do echo $i; > ~/var/${i}-script.sh;done
+
+cat "/ConfigData/bin/tmp-migration-script.sh"|grep $host > ~/var/${host}.sh
+cat ~/var/${host}.sh
+
+## check the wk
+for i in $h; do grep $i /ConfigData/data/satellite-patch-report.data|cut -f1,8,9 -d:; done
+for i in $h; do grep $i /ConfigData/data/satellite-patch-report.data|cut -f1,8,9 -d:|grep -v ": 1:"; done
+for i in $h; do grep $i /ConfigData/data/satellite-patch-report.data|cut -f1,8,9 -d:|grep -v ": 1:"|cut -f1 -d: ; done
+
+for host in $h; do echo $host; hammer host set-parameter --host ${host} --name h_wartung --value 'automatic'; done
+
+H=`grep px /ConfigData/data/satellite-patch-report.data|cut -f1 -d:`
+H=`grep te /ConfigData/data/satellite-patch-report.data|cut -f1 -d:`
+H=`grep px /ConfigData/data/satellite-patch-report.data|grep cut -f1 -d:`
+
+for h in $H; do cat /ConfigData/data/satellite-patch-report.data |grep $h|cut -f1,8 -d:|grep ': 2'; hammer host set-parameter --host ${h} --name h_wartung --value 'automatic';sleep 2;done
+
+
+H=`grep px: /ConfigData/data/satellite-patch-report.data|cut -f1,8,9 -d:|grep ': 3:'|cut -f1 -d:` # px automatic 
+h=`grep te: /ConfigData/data/satellite-patch-report.data|cut -f1,8 -d:|grep ': 3'|cut -f1 -d:` # te automatic 
+h=`grep qa: /ConfigData/data/satellite-patch-report.data|cut -f1,8 -d:|grep ': 3'|cut -f1 -d:` # qa automatic 
+for host in $h; do echo "$host - automatic"; hammer host set-parameter --host ${host} --name h_wartung --value 'automatic'; sleep 1; done
+
+h=`grep px: /ConfigData/data/satellite-patch-report.data|cut -f1,8 -d:|grep ': 1'|cut -f1 -d:`  # px manual 
+for host in $h; do echo "$host - manual" ; hammer host set-parameter --host ${host} --name h_wartung --value 'manual';sleep 1;  done
+
+
+for i in $h; do grep wartung ~/var/${i}-script.sh;done
+
+## check the hosts settings
+for host in $h; do /bin/hammer host info --name $host;sleep 2; echo "###############";  done
+
+
+
+ck_sat_tranch
+cat /ConfigData/data/satellite-patch-report.data |grep $h|cut -f1,8,9 -d: 
+cat /ConfigData/data/sat6-px-host-paramaters.data |grep $h|cut -f1,14,15 -d';'
+
+
+cat /ConfigData/data/sat6-px-host-paramaters_mod.data |grep hg_t 
+
+
+######################################
+######################################
+
+
+## 
+- name: disable yum rhn-plugin
+  lineinfile:
+    path: /etc/yum/pluginconf.d/rhnplugin.conf
+    regexp: '^enabled ='
+    line: 'enabled = 0'
+  ignore_errors: yes
+
+###########
+## no repo
+ansible -i $INV $GRP -a "wget http://$SERVER/pub/subscription-manager-1.18.10-1.el6.x86_64.rpm" -s
+ansible -i $INV $GRP -a "yum -y localinstall subscription-manager-1.18.10-1.el6.x86_64.rpm" -s
+scp katello-ca-consumer-latest.noarch.rpm ${host}:/tmp/
+ansible -i $INV $GRP -a "yum -y localinstall /tmp/katello-ca-consumer-latest.noarch.rpm" -s
+
+## re
+ansible -i $INV $GRP -a "subscription-manager refresh" -s
+
+ansible -i $INV $GRP -a "rpm -qa subscription-manager" -s -o
+ansible -i $INV $GRP -a "rpm -qa katello-agent" -s -o 
+ansible -i $INV $GRP -a "rpm -qa katello-ca-consumer-$SERVER.corp.int" -s -o 
+
+task="rhncfg-client list" 
+ansible -i hosts all -a $task -s 
+
+## roll back
+ansible -i $INV $GRP -a "mv /etc/sysconfig/rhn/systemid-disabled /etc/sysconfig/rhn/systemid" -s 
+ansible -i $INV $GRP -a "yum -y erase diba-bigdata-puppet-init*" -s
+
+######################## 
+## set hg 
+hg="hg_t_rhel6_appl"
+hg="hg_q_rhel6_appl"
+hg="hg_p_rhel6_appl"
+hg="hg_t_rhel7_appl"
+hg="hg_q_rhel7_appl"
+hg="hg_p_rhel7_appl"
+
+hg="hg_q_rhel6_sap"
+
+hg="hg_p_rhel7_appl"
+hg="hg_t_rhel7_j2ee"
+hg="hg_q_rhel7_j2ee"
+hg="hg_p_rhel7_j2ee"
+hg="hg_q_rhel6_bigdata"
+hg="hg_p_rhel6_bigdata"
+hg="hg_q_rhel7_bigdata"
+hg="hg_p_rhel7_bigdata"
+
+
+
+######################################
+## load inventory to hosts 
+
+h=`ansible -i $INV $GRP --list-hosts|grep -v hosts`
+
+## set hg
+for host in $h; do echo $host $hg;  hammer host update --hostgroup=$hg --name $host --organization INGDiBa; done 
+
+## set parameters
+cat "/ConfigData/bin/tmp-migration-script.sh"|grep $host > ~/var/${host}.sh
+cat ~/var/${host}.sh
+
+for i in $h; do echo $i; > ~/var/${i}-script.sh;done
+for i in $h; do grep $i "/ConfigData/bin/tmp-migration-script.sh" >> ~/var/${i}-script.sh;done 
+for i in $h; do echo $i; bash ~/var/${i}-script.sh;done
+
+## check the wk 
+for i in $h; do grep $i /ConfigData/data/satellite-patch-report.data|cut -f1,8,9 -d:; done 
+for host in $:wq
+h; do echo $host; hammer host set-parameter --host ${host} --name h_wartung --value 'automatic'; done 
+
+## check the hosts settings 
+for host in $h; do /bin/hammer host info --name $host;sleep 2; echo "###############";  done
+
+
+###############
+/bin/hammer host info --name $host
+hammer host update --hostgroup=$hg --name $host --organization INGDiBa
+for host in $h; do /bin/hammer host info --name $host;sleep 2; echo "###############";  done 
+for host in $h; do /bin/hammer host info --name $host|grep -i group; done 
+
+###############
+for i in $h; do host $i |awk '{print $1,$4}'|sed 's/.corp.int//' ; done
+
+for i in $h; do echo $i; cat ~/var/${i}-script.sh;echo '##############';done
+for i in $h; do echo $i; cat ~/var/${i}-script.sh|sed 's/manual/automatic/';echo '##############';done
+%s/manual/automatic/g
+
+for i in `ls -1  ~/var/${h}-script.sh`; do echo $i; cat $i; done 
+
+##########
+#####
+## bigdata set reinstall 
+for host in $h; do echo $host;hammer host set-parameter --host ${host} --name h_reinstall --value true; done
+
+
+/bin/hammer host set-parameter --host ${host} --name h_wartung --value 'automatic'
+/bin/hammer host set-parameter --host ${host} --name h_wartung --value 'manual'
+WK='automatic'   WK='manual'
+for host in $h; do echo $host;hammer host set-parameter --host ${host} --name h_wartung --value $WK; done
+
+tr="fr_0700" 
+tr="so_0200"  
+tr="so_0400"  
+tr="sa_2200"
+for host in $h; do echo $host $tr; /bin/hammer host set-parameter --host ${host} --name h_tranch --value ${tr}; done 
+
+stg=qa
+/bin/hammer host set-parameter --host ${host} --name h_stage --value ${stg}
+
+anw="SAPIntegration"
+/bin/hammer host set-parameter --host ${host} --name h_anwendung --value ${anw}
+
+email='["VL_ITI_AE_SAP_Basis@ing-diba.int"]'   email='["VL_ITI_AE_SAP_Basis@ing-diba.int"]' 
+/bin/hammer host set-parameter --host ${host} --name h_email --value ${email}
+for host in $h; do echo $host;hammer host set-parameter --host ${host} --name h_email --value $email; done
+
+cc='["ssd-sudoers","cfg-sap-qa-rhel-server-6","cfg-extras-common-qa-rhel-server-6","cfg-corp-qa-rhel-server-6"]'
+/bin/hammer host set-parameter --host ${host} --name h_cfg_channels --value ${cc} 
+contact='["Juergen Rupprecht"]'
+/bin/hammer host set-parameter --host ${host} --name h_contact --value ${contact}
+ldap='["iti_vcs","iti_sbs"]'
+/bin/hammer host set-parameter --host ${host} --name h_ldapgroup --value ${ldap}
+##########
+
+/bin/hammer host set-parameter --host ${host} --name h_application --value ${app}
+/bin/hammer host set-parameter --host ${host} --name h_hostgroup --value ${hg}
+/bin/hammer host set-parameter --host ${host} --name h_akey --value ${akey}
+pd="wk_px_automatic_sa_2200_07-05-2016"
+pd="wk_te_automatic_test"
+for host in $h;do  echo $host $pd; /bin/hammer host set-parameter --host ${host} --name h_patchday --value ${pd}; done 
+/bin/hammer host set-parameter --host ${host} --name h_patchday --value ${pd}
+
+/bin/hammer host set-parameter --host ${host} --name h_reinstall --value true
+for host in $h;do echo $host reinstall; /bin/hammer host set-parameter --host ${host}.corp.int --name h_reinstall --value true; done 
+
+
+for host in $h; do echo $host; hammer host set-parameter --host ${host}.corp.int --name h_wartung --value 'automatic'; done 
+for host in $h; do echo $host $val; hammer host set-parameter --host ${host}.corp.int --name h_tranch --value ${val}; done 
+
+/bin/hammer host delete-parameter --host ${host} --name h_hostgroup
+/bin/hammer host delete-parameter --host ${host} --name h_anwendugn
+/bin/hammer host delete-parameter --host ${host} --name h_email
+
+for host in $h; do echo $host; hammer host delete-parameter --host ${host}.corp.int --name h_anwendugn; done 
+
+i=0;while read host; do echo $i $host;i=`expr $i + 1 `;/bin/hammer host delete-parameter --host ${host}.corp.int --name h_hostgroup; done < qa-auto-0
+i=0;while read host; do echo $i $host;i=`expr $i + 1`;/bin/hammer host set-parameter --host ${host}.corp.int --name h_tranch --value ${val}; done < $INV
+
+
+######
+## report the patch status
+hammer host errata list --host ${host}.corp.int
+for host in $h; do echo $host >>  ~/errata-report.txt ; hammer host errata list --host ${host}.corp.int >> ~/errata-report.txt; ansible -a 'uptime' $host -o >> ~/errata-report.txt; done 
+ansible -i te-auto-0 all -a 'uptime' -o ~/errata-report.txt 
+
+
+for host in $h; do ansible -i $INV $host -a 'uptime' -o >> ~/errata-report.txt; hammer host errata list --host ${host}.corp.int >> ~/errata-report.txt; done
+
+#################
+
+ansible-playbook hosts ~/stash/ds-sat-ansible/playbooks/ck_migration.yml -s 
+
+ansible-playbook -i $INV $host /opt/sat-ansible/playbooks/job-rh-sys-falcon-migration.yml -s 
+ansible-playbook -i $INV /opt/sat-ansible/playbooks/job-rh-sys-falcon-migration.yml -s 
+
+yum list extras 
+
+
+##########################
+ansible -i ~/scripts/lists/hosts all -a "subscription-manager repos --enable rhel-7-server-extras-rpms" -s
+ansible -i ~/scripts/lists/hosts all -a "yum -y install docker" -s
+
+
+
+
+
+##########################
+
+vim /etc/yum/pluginconf.d/rhnplugin.conf
+# sed -i 's%^enabled\s*=.*%enabled=0%' /etc/yum/pluginconf.d/subscription-manager.conf;
+
+yum update --exclude=puppet --exclude=facter
+
+
+ansible -i ~/scripts/lists/hosts migration_hosts -a "subscription-manager register --org=INGDiBa --activationkey=akey_t_rhel6_bigdata" -s
+
+diba-release-os-bigdata-rhel-x86_64-server-6-20170607.0839-1.x86_64
+
+
+## checks
+yum repolist
+subscription-manager status
+rpm -qa |grep katell
+rpm -qa |grep diba-rel
+yum check-update
+rhncfg-client list 
+
+
+
+#
+######################
+# vim turn on / off the autoindent
+:set autoindent		# Turn on auto-indent
+:set smartindent	# Turn on intelligent auto-indent
+:set shiftwidth=4	# Defines 4 spaces as indent size
+
+######################
+# set vim color scheme
+# ####################
+:set colorscheme <colorscheme>
+:highlight Special guifg=SlateBlue guibg=GhostWhite
+:colo blue
+:colo darkblue
+:colo default
+:colo delek
+:colo desert
+:colo elflord
+:colo evening
+:colo koehler
+:colo morning
+:colo murphy
+:colo pablo
+:colo peachpuff
+:colo ron
+:colo shine
+:colo slate
+:colo torte
+:colo zellner
+
+##############################
+# BIGDATA 
+##############################
+#set the disks on the Datanodes
+#!/bin/sh 
+
+umount /BIGDATA
+vgremove -f vgappl.01
+
+#parted -m /dev/sdb mkpart disk01 ext4 1049kB 100%
+parted -m /dev/sdc mkpart disk02 ext4 1049kB 100%
+parted -m /dev/sdd mkpart disk03 ext4 1049kB 100% 
+parted -m /dev/sde mkpart disk04 ext4 1049kB 100%
+parted -m /dev/sdf mkpart disk05 ext4 1049kB 100%
+
+DEVx="sdb sdc sdd sde sdf"
+DEVS="sdb1 sdc1 sdd1 sde1 sdf1"
+for DEV in $DEVx; do   parted -m /dev/${DEV} print; done 
+for DEV in $DEVS; do     mkfs.ext4 /dev/${DEV}; done 
+
+cat /etc/fstab|grep -v BIGDATA > /tmp/fstab
+echo "
+/dev/sdb1 /BIGDATA/hadoop/hdfs/data/disk01                ext4    defaults
+1 2
+/dev/sdc1 /BIGDATA/hadoop/hdfs/data/disk02                ext4    defaults
+1 2
+/dev/sdd1 /BIGDATA/hadoop/hdfs/data/disk03                ext4    defaults
+1 2
+/dev/sde1 /BIGDATA/hadoop/hdfs/data/disk04                ext4    defaults
+1 2
+/dev/sdf1 /BIGDATA/hadoop/hdfs/data/disk05                ext4    defaults
+1 2
+" >> /tmp/fstab
+
+cp /etc/fstab /etc/fstab-bak
+cat /tmp/fstab > /etc/fstab
+
+DISKS="disk01 disk02 disk03 disk04 disk05"
+for DISK in $DISKS; do   mkdir -p /BIGDATA/hadoop/hdfs/data/${DISK}; done
+
+mount -all 
+
+# 50 G disk
+ls -l /dev/sd*  # get the disk not used
+
+parted $D mklabel gpt
+parted $D mkpart local ext4 1049kB 100% 
+mkfs.ext4 ${D}1
+DEVS=`ls -1 /dev/sd*  |grep 1|grep -v sda1`
+for i in $DEVS; do blkid |grep $i; parted $i print|tail -3;echo ""; done
+exit
+
+umount /BIGDATA/hadoop/hdfs/data/disk01
+umount /BIGDATA/hadoop/hdfs/data/disk02
+umount /BIGDATA/hadoop/hdfs/data/disk03
+umount /BIGDATA/hadoop/hdfs/data/disk04
+umount /BIGDATA/hadoop/hdfs/data/disk05
+vi /etc/fstab 
+
+UUID= /BIGDATA ext4    defaults        1 2
+UUID= /BIGDATA/hadoop/hdfs/data/disk01 ext4    defaults        1 2
+UUID= /BIGDATA/hadoop/hdfs/data/disk02 ext4    defaults        1 2
+UUID= /BIGDATA/hadoop/hdfs/data/disk03 ext4    defaults        1 2
+UUID= /BIGDATA/hadoop/hdfs/data/disk04 ext4    defaults        1 2
+UUID= /BIGDATA/hadoop/hdfs/data/disk05 ext4    defaults        1 2
+
+mount /BIGDATA
+
+DISKS="disk01 disk02 disk03 disk04 disk05"
+for DISK in $DISKS; do   mkdir -p /BIGDATA/hadoop/hdfs/data/${DISK}; done
+mount -a 
+df -h 
+df -TP -x tmpfs -x nfs
+
+pushlocalcfg2sat.sh /etc/fstab
+exit
+
+blkid > /tmp/wk
+
+## reset the fstab from /appl to /bigdata
+umount /APPL
+umount /J2EE
+vi /etc/fstab
+
+mkdir /BIGDATA
+mount /BIGDATA
+df -h
+
+pushlocalcfg2sat.sh /etc/fstab
+exit
+
+## performance setting that Bart wants
+1. Disable swapiness
+echo 0 > /proc/sys/vm/swappiness
+echo "vm.swappiness=0" >> /etc/sysctl.conf
+
+2. Data disks: mount with noatime option 
+in /etc/fstab
+UUID= /BIGDATA/hadoop/hdfs/data/disk05 ext4    defaults,noatime        0
+mount -o remount /BIGDATA/hadoop/hdfs/data/disk05
+
+3. Data disk: disable root space 
+mkfs.ext3 -m 0 /dev/sdc   # create part no root-owned files
+tune2fs -m 0 /dev/sdc     # existing part
+
+4. enable ncsd 
+is standard
+chkconfig --list |grep nscd
+nscd            0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+5. increase file handle limits 
+echo hdfs - nofile 32768 >>  /etc/security/limits.conf 
+echo mapred - nofile 32768 >>  /etc/security/limits.conf 
+echo hbase - nofile 32768 >>  /etc/security/limits.conf 
+echo hdfs - nproc 32768 >>  /etc/security/limits.conf 
+echo mapred - nproc 32768 >>  /etc/security/limits.conf 
+echo hbase - nproc 32768 >>  /etc/security/limits.conf 
+
+6. use dedicated OS/logging disk.
+is in design 
+
+7. sane name resolution
+is standard
+
+# bonus round 
+1. RH Transparent Huge Pages
+echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag 
+echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+
+######################
+## logical volumes
+#######################
+pvs     # show pysical volumes
+vgs     # show vertuel volumes
+lvs     # show logical volumes
+
+#######################
+## patching 
+/usr/local/bin/rhncfg-backup.sh 
+rhncfg-client get /usr/local/bin/update.config.sh
+rhncfg-client verify
+rhncfg-client channels
+exit
+
+## compare the local to the remote. 
+rhncfg-client channels 
+yum repolist 
+df -h 
+chkconfig --list
+
+rhn-profile-sync
+
+cd /usr/local/bin
+wget http://$SERVER/pub/prepare-initial-config-deploy.sh -O prepare-initial-config-deploy.sh
+bash /usr/local/bin/prepare-initial-config-deploy.sh
+
+
+cd /tmp/cfgdiff* 
+for i in `ls -1`; do echo $i;cat $i; echo '########################'; echo ""; read A; done 
+
+## yum install with exception for jdk
+yum update --exclude=java-1.7.0-openjdk --exclude=java-1.7.0-openjdk-devel
+
+
+######################
+## connect a system to sat5
+## https://confluence/display/ITIServerSystems/3.2+Vorhandene+Systeme+anbinden
+
+wget --no-check-certificate -O bootstrap-generic.sh https://$SERVER/pub/bootstrap/bootstrap-generic.sh
+bash ./bootstrap-generic.sh stage=te app=appl 
+
+/usr/local/bin/sudo_tmp_user.sh was
+
+
+
+#######################
+## RHEL Admin
+#######################
+service --status-all
+service puppetdb restart
+service rh-postgresql94-postgresql status
+service httpd start
+
+getent services
+getent passwd | cut -f1,6 -d:        
+getent passwd $USER|cut -f6 -d:        
+chkconfig --list
+chkconfig del ntpd
+chkconfig add ntpd
+chkconfig ntpd on
+service ntpd stop
+ntpdate -b 
+service ntpd start   
+service ntpd stop
+ntpdate -b 
+service ntpd start   
+ntpq -pn 
+ntpq -pn 
+
+rhncfg-client verify
+MISSING=$(rhncfg-client verify |grep missing|awk '{print $2}')
+rhncfg-client get $MISSING
+rhncfg-client diff /etc/aliases
+
+vi /etc/aliases
+newaliases
+
+ping -c 5 $host
+ping -c1 localhost
+ping -c1 `hostname -s` # m y_system
+ping -c1 `hostname -f` 
+
+## 
+ps -ef |grep rhn
+ps -auf {$PID}
+pstree
+
+rhn_check -v           
+
+########################
+## satallite var full
+########################
+#try 
+service jabberd stop
+#
+rm -f /var/lib/jabberd/db/_db*
+#
+service jabberd start
+#
+#
+########################
+## patching linux
+########################
+# check the system to be patched 
+
+### prefetch 
+sudo ./draft-ci_prefetch-group.py -p pd_wk_automatic_qa_so_0400_20180121
+
+ansible-playbook -i ~/sat-ansible/bin/foreman.py -l $grp ~/sat-ansible/playbooks/rh-sys-prefetch.yml -s
+
+/usr/local/bin/rh-sys-prefetch-downloadonly.sh
+bash -x /usr/local/bin/rh-sys-prefetch-downloadonly.sh
+
+yum -y --downloadonly update
+/opt/DiBaicinga/libexec/check_disk -w 20% -c 15% -p /var  
+
+### Monitoring RHEL
+echo "Host:IP:Anwendung:OS-RHEL"         
+for i in $H; do A=`host $i|awk '{print $4}'`; echo $i:$A:':$ANW:RHEL standard' ; done
+### RHEL
+
+for i in `cat ~/scripts/lists/hosts`; do A=`host $i|awk '{print $4}'`; echo $i:$A:':BigData:RHEL standard' ; done
+yum update --disablerepo=\* --enablerepo=diba-icinga-dev-te-rhel-x86_64-server-6  
+
+df -h |grep var    
+yum list *diba-rel*
+grep rpm /usr/local/bin/update.config.sh
+
+yum repolist
+
+/usr/local/bin/rhncfg-backup.sh
+rhncfg-client verify 
+rhncfg-client channels  
+
+rhncfg-client get
+/usr/local/bin/prefetch.sh
+
+/usr/local/bin/update_to_release_ng.sh
+
+
+
+for i in `rpm -qa |grep gpg-pub`; do rpm -qi $i|grep Summary; done        # check which keys are installed 
+
+
+## display all the third party gpg keys installed
+rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
+
+## push my authkey
+chmod +x /tmp/push-ssh-auth.sh
+/tmp/push-ssh-auth.sh
+rm -f /tmp/push-ssh-auth.sh 
+
+## check the system after reboot
+ssh host
+sudo su - 
+
+df -h 
+yum clean all 
+/usr/local/bin/diba_unittests.sh 
+yum list *diba-rel*
+
+
+
+
+########################
+## VI tips
+########################
+## vim turn colar on and off
+:syntax on
+:syntax off
+
+#########################
+## satelitte
+########################
+## check for new system in sat and add my key to them 
+DATE=`date +%Y%m%d --date="1 days ago" `
+
+
+DATE='date +%Y%m'
+cat /APPL/$USER/share/data/satellite-patch-report.data |cut -f1,14 -d:  |grep $DATE|cut -f1 -d. > lists/hosts                                                         
+## check if the job for key loading is active 
+/export/home/$USER/scripts/run-sat-jobs.py
+
+
+
+## scripts
+/usr/local/bin/rhncfg-backup.sh
+/usr/local/bin/prefetch.sh
+satellite-sync -c diba-voiceodbc-px-rhel-x86_64-server-6 
+
+/usr/local/bin/rhncfg-backup.sh
+
+yum install rhncfg-actions
+rhn-actions-control --help
+rhn-actions-control --enable-all
+rhn-actions-control --report
+
+/usr/local/bin/rhncfg-backup.sh
+
+## vmware tools 
+yum install vmware-tools-esx-nox vmware-tools-esx-kmods
+
+yum list vmware-tools-esx-nox | grep  -q "Available Packages" 
+if [ $? -eq 0 ] ; then 
+   yum -y remove "vmware-*"
+   yum -y install vmware-tools-esx-kmods vmware-tools-esx-nox
+fi 
+
+
+########################
+## space
+########################
+
+find /var \( -size +100M -fprintf /root/big.txt '%-10s %p\n' \) # space
+cat /root/big.txt
+
+rm -rf /var/cache/yum/x86_64/6Server
+rm -rf /var/cache/yum/x86_64/7Server
+df -h 
+
+
+for i in `ls -l |grep ^d|awk '{print $9}'`; do du -hs $i; du -hs $i |sort -nur|head -10;find $i -ls|wc -l;echo '#####################' ; done # echo "space" 
+du -ak / | sort -nru | head -30 ; echo "RH space "
+du -ak . | sort -nru | head -30 ; echo "RH space" 
+du -x . | sort -n |cut -d\/ -f1-2|sort -k2 -k1,1nr|uniq -f1|sort -n|tail -20|cut -f2|xargs du -sxh # space
+du -akx --time / |egrep -v "BIGDATA|APPL|J2EE|boot|home|var|dev" |sort -nru |head -30 # space
+du -axk / > /tmp/du.rst ; echo space
+du -h --max-depth=1 /var ; echo "space"
+du -ch /tmp/|grep total
+
+df -k |grep -iv filesystem |awk '{print $1 "\t" $4 "\t" $5}' # space
+
+find . -type f -mtime +14 -exec gzip {} \; ; echo "space"
+find . -type f -mtime +90 -exec ls -la {} \; ; echo "space"
+find . -type f -mtime +90 -exec rm {} \; ; echo "space"
+find . -empty -type f -ls -exec rm {} \;
+find /var \( -size +100M -fprintf /root/big.txt '%-10s %p\n' \) # space
+
+for i in `ls -1`; do du -s $i; done # space
+for i in $I; do echo $i; ssh -q $i sudo du -ch /tmp/|grep total; echo "############"; done
+
+## find user files
+for i in `find / -user tez|grep -v 'find:'`; do echo $i; done 
+
+###########################
+# ipa
+###########################
+
+id $USER@diba.corp.int | sed 's/,/\n/g'
+id $USER@diba.corp.int | tr ',' '\n'
+id -nG $USER
+id -G $USER
+id -nG $USER@diba.corp.int
+
+GRP=`id -Gn $USER@diba.corp.int`; for i in $GRP; do echo $i;done 
+
+useradd -u 348100015 -g adm -d /export/home/ipa-$USER -m ipa-$USER
+
+ipa group-add-member ipa-g_ci_aaexpenv-iaa_builder_users --external "diba.corp.int\g_ci_aaexpenv-iaa_builder_users"
+
+useradd -u 500016 -g adm -d /export/home/sare -c "Satellite Ansible Remote Ent" -m sare
+useradd -u 500017 -g adm -d /export/home/sart -c "Satellite Ansible Remote Test" -m sart
+useradd -u 500018 -g adm -d /export/home/sarv -c "Satellite Ansible Remote Vorprod" -m sarv
+useradd -u 500019 -g adm -d /export/home/sarp -c "Satellite Ansible Remote Prod" -m sarp
+
+chage -E -1 -I -1 -m 0 -M 99999 -W 7 sare
+
+for i in sare sarp; do sudo chage -E -1 -I -1 -m 0 -M 99999 -W 7 $i; done
+
+
+############################
+## partition bigdata
+############################
+lsblk
+dd if=/dev/zero of=/dev/sdb bs=1M count=10
+dd if=/dev/zero of=/dev/sdc bs=1M count=10
+dd if=/dev/zero of=/dev/sdd bs=1M count=10
+chmod +x /tmp/part_bigdata_hdfs.sh
+/tmp/part_bigdata_hdfs.sh
+
+
+
+###########################
+## yarn user change id 
+###########################
+# new uid and gid are 72293
+find / -group yarn > /tmp/yarn-group
+find / -user yarn > /tmp/yarn-user
+
+vi /etc/group
+vi /etc/passwd
+
+for i in `cat /tmp/yarn-user`; do chown yarn $i ; done
+for i in `cat /tmp/yarn-group`; do chgrp yarn $i ; done
+
+groupadd -g 72293 yarn
+useradd -c "Hadoop Yarn" -s /bin/bash -u 72293 -g yarn -d /var/lib/hadoop-yarn -m yarn 
+
+useradd -c "Tech user for automatic vmware scripts" -s /bin/bash -g sys -d /export/home/vmware -m vmware      
+
+vi /etc/passwd
+mkdir /BIGDATA/home/yarn
+chown yarn.hadoop /BIGDATA/home/yarn
+chmod 700 /BIGDATA/home/yarn
+
+#########################
+## performance, troubleshooting, tools
+#########################
+## count the threads, cpu, commands
+ps uH p 4651|wc -l 
+ps uH p 4651|awk '{print $3,$4,$11,$22}'|sort -nur|more
+
+
+CPU Tools
+ top
+ vmstat
+ ps aux
+ mpstat -P ALL
+ sar -u
+ iostat
+ oprofile
+ gnome-system-monitor
+ KDE-monitor
+ /proc
+
+Memory Tools
+ top
+ vmstat -s
+ ps aur
+ ipcs
+ sar -r -B -W
+ free
+ oprofile
+ gnome-system-monitor
+ KDE-monitor
+ /proc
+
+Process Tools
+ top
+ ps -o pmem
+ gprof
+ strace,ltrace
+ sar
+
+Disk Tools
+ iostat -x
+ vmstat -D
+ sar -DEV #
+ nfsstat
+
+### 
+#checks on the MWS systemen 
+
+
+
+RH-6.5:64 -> vmstat -s
+      8057568  total memory
+      5036148  used memory
+      2873004  active memory
+      1493796  inactive memory
+      3021420  free memory
+       338436  buffer memory
+      2467220  swap cache
+      2097148  total swap
+            0  used swap
+      2097148  free swap
+       565902 non-nice user cpu ticks
+         3135 nice user cpu ticks
+       470857 system cpu ticks
+   1581405539 idle cpu ticks
+       797933 IO-wait cpu ticks
+          863 IRQ cpu ticks
+         3573 softirq cpu ticks
+            0 stolen cpu ticks
+      1001195 pages paged in
+     14512100 pages paged out
+            0 pages swapped in
+            0 pages swapped out
+    297729564 interrupts
+    404207337 CPU context switches
+   1412672469 boot time
+      1591308 forks
+
+RH-6.5:64 ->  cat /etc/sysctl.conf|grep -v '#' |sort -u 
+
+fs.file-max = 102642
+kernel.core_uses_pid = 1
+kernel.sysrq = 0
+net.bridge.bridge-nf-call-arptables = 0
+net.bridge.bridge-nf-call-ip6tables = 0
+net.bridge.bridge-nf-call-iptables = 0
+net.core.rmem_default = 262144
+net.core.rmem_max = 16777216
+net.core.wmem_default = 262144
+net.core.wmem_max = 16777216
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.ip_forward = 0
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_wmem = 4096 65536 16777216
+
+RH-6.5:64 -> cat /proc/sys/vm/min_free_kbytes
+67584
+
+RH-6.5:64 -> ps aur                                                                                                                            
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root      5548  0.0  0.0 108316   972 pts/5    R+   05:56   0:00 ps aur
+
+RH-6.5:64 -> ps -o pmem
+%MEM
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+
+
+-> free                                                                             
+             total       used       free     shared    buffers     cached
+Mem:       8057568    5034204    3023364          0     338428    2467212
+-/+ buffers/cache:    2228564    5829004
+Swap:      2097148          0    2097148
+
+RH-6.5:64 -> grep MemTotal /proc/meminfo
+MemTotal:        8057568 kB
+
+RH-6.5:64 -> cat /proc/meminfo|less                                                                                                             
+MemTotal:        8057568 kB
+MemFree:         3026152 kB
+Buffers:          338424 kB
+Cached:          2467164 kB
+SwapCached:            0 kB
+Active:          2869264 kB
+Inactive:        1493816 kB
+Active(anon):    1557652 kB
+Inactive(anon):       28 kB
+Active(file):    1311612 kB
+Inactive(file):  1493788 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:       2097148 kB
+SwapFree:        2097148 kB
+Dirty:                60 kB
+Writeback:             0 kB
+AnonPages:       1557492 kB
+Mapped:            68076 kB
+Shmem:               204 kB
+Slab:             584620 kB
+SReclaimable:     554832 kB
+SUnreclaim:        29788 kB
+KernelStack:        2728 kB
+PageTables:        12252 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     6125932 kB
+Committed_AS:    3011252 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      159900 kB
+VmallocChunk:   34359574732 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:   1093632 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       10240 kB
+DirectMap2M:     8378368 kB
+
+RH-6.5:64 -> top
+top - 05:51:10 up 45 days, 19:50,  6 users,  load average: 0.67, 1.19, 0.69
+Tasks: 162 total,   1 running, 161 sleeping,   0 stopped,   0 zombie
+Cpu(s):  0.0%us,  0.2%sy,  0.0%ni, 99.8%id,  0.1%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:   8057568k total,  5083944k used,  2973624k free,   338420k buffers
+Swap:  2097148k total,        0k used,  2097148k free,  2467128k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND                                                                            
+    1 root      20   0 21456 1596 1256 S  0.0  0.0   0:06.83 init                                                                               
+    2 root      20   0     0    0    0 S  0.0  0.0   0:00.00 kthreadd                                                                           
+    3 root      RT   0     0    0    0 S  0.0  0.0   0:02.12 migration/0                                                                        
+    4 root      20   0     0    0    0 S  0.0  0.0   0:00.75 ksoftirqd/0
+
+
+------ Shared Memory Limits --------
+max number of segments = 4096
+max seg size (kbytes) = 32768
+max total shared memory (kbytes) = 8388608
+min seg size (bytes) = 1
+
+
+
+RH-6.5:64 -> cat /proc/sys/kernel/shmmax
+33554432
+
+
+RH-6.5:64 -> cat /proc/sys/kernel/shmmni
+4096
+
+RH-6.5:64 -> getconf PAGE_SIZE
+4096
+
+RH-6.5:64 -> cat /proc/sys/kernel/shmall
+2097152
+
+
+RH-6.5:64 -> ipcs -m
+
+------ Shared Memory Segments --------
+key        shmid      owner      perms      bytes      nattch     status   
+
+
+RH-6.5:64 -> ipcs -ls
+
+------ Semaphore Limits --------
+max number of arrays = 128
+max semaphores per array = 250
+max semaphores system wide = 32000
+max ops per semop call = 32
+semaphore max value = 32767
+
+
+
+
+
+
+
+#########################
+## icinga checks
+##########################
+grep ^G ~/tmp.txt|cut -f1 -d:
+
+https://icinga/icingaweb2/monitoring/list/services?host=%2Asx%2A&(service=%2Asys%2A&service_state!=OK)&modifyFilter=1
+
+
+check_nrpe -H ${host}
+check_nrpe -H ${host} -c check_disk -a '-w 20% -c 15% -p /' 
+check_nrpe -H ${host} -c check_ntp -a '-H ${IP} -w 0.5 -c 1' 
+check_nrpe -H ${host} -c check_ntp -a '-H ${IP} -w 0.5 -c 1' 
+check_nrpe -H ${host} -c check_logfiles -f ${file}
+check_nrpe -H ${host} -c check_swap -a '-w 30% -c 15%'
+
+
+
+/opt/DiBaicinga/libexec/check_ntp -H ${IP} -w 0.5 -c 1
+/opt/DiBaicinga/libexec/check_ntp -H ${IP} -w 0.5 -c 1
+
+for host in `cat /export/home/$USER/scripts/lists/hosts`; do check_nrpe -H ${host} -c check_ntp -a '-H ${IP} -w 0.5 -c 1' ; done
+for host in `cat /export/home/$USER/scripts/lists/hosts`; do check_nrpe -H ${host} -c check_ntp -a '-H ${IP} -w 0.5 -c 1' ; done
+for i in `cat /home/$USER/scripts/lists/hosts`; do grep -i $i /ConfigData/data/icinga.data|grep -i ntp; done
+
+ssh -q ${host} /opt/DiBaicinga/libexec/check_disk -w 20% -c 15% -p /
+ssh -q ${host} /opt/DiBaicinga/libexec/check_disk -c 30MB -p /boot
+
+
+alias check_nrpe='/APPL/icinga/plugins/check_nrpe' ## on as048p 
+alias check_nrpe='/usr/lib64/nagios/plugins/check_nrpe' ## on mg001e
+
+## icinga user add
+groupadd -g 33214 icinga
+useradd -u 33214 -g icinga -d /export/home/icinga -m icinga
+cd /export/home/icinga/
+
+mkdir /export/home/icinga/.ssh
+chown icinga.icinga /export/home/icinga/.ssh
+chmod 700 /export/home/icinga/.ssh
+chage -E -1 -I -1 -m 0 -M 99999 -W 7 icinga
+su - icinga
+
+########################
+## logfile server
+########################
+date +/APPL/rsyslog/%Y/%m/%d
+service rsyslog restart
+/APPL/splunk/bin/splunk restart
+cat /APPL/tmp/check-rsyslog.log
+
+
+## get info from the logs
+cd /APPL/rsyslog/2015/07/09
+L=$(find . -name "messages.gz" )
+(for i in $L ; do gzip -cd $i | grep "^Jul 9 14:"; sleep 1; done ) | tee -a tmp14.txt
+(for i in $L ; do gzip -cd $i | grep "^Jul 9 14:"; sleep 1; done ) | tee -a tmp14.txt
+egrep '(Jul 9 14:45|Jul 9 14:46|Jul 9 14:47)' tmp14.txt | more
+
+
+
+##########################
+## bash tips 
+##########################
+echo $a | tr '[A-Z]' '[a-z]' ## translate cap letters
+x="HELLO"
+echo $x  # HELLO
+
+y=${x,,}
+echo $y  # hello
+
+z=${y^^}
+echo $z  # HELLO
+
+#########################################
+## administration 
+#########################################
+find /usr/src/redhat/RPMS/ -ls |grep `date +%Y%m` |grep -v se-os|awk '{print $11}'|sort -u    # find the diba-releases 
+
+#
+yum history list
+yum history info 6
+
+package-cleanup --cleandupes
+package-cleanup --dupes
+
+
+sudo -i
+yum install spacewalk-oscap
+rpm -qa spacewalk-oscap
+
+yum search --showduplicates diba-rel|grep 201508
+yum search --showduplicates diba-rel|sort
+
+/usr/local/bin/diba_unittests.sh
+
+###
+## git hub over proxy
+export https_proxy=serverproxy.corp.int:8080
+git clone https://github.com/elastic/ansible-elasticsearch
+
+
+## test the proxy reverse lookup for jenkins
+curl -iL -e http://serverproxy.corp.int/jenkins/manage http://serverproxy.corp.int/jenkins/administrativeMonitor/hudson.diagnosis.ReverseProxySetupMonitor/test
+
+export http_proxy=serverproxy.corp.int:8080
+cat /etc/rhn/rhn.conf
+
+#### check ntp #######################
+
+for i in `cat ~/scripts/lists/hosts`; check_nrpe -H $i ; done 
+
+chown icinga.icinga /opt/DiBaicinga/libexec/check_ntp_ng.sh # in auth
+chmod 755 /opt/DiBaicinga/libexec/check_ntp_ng.sh # auch in auth 
+chown icinga.icinga /etc/opt/DiBaicinga/nrpe.cfg
+chmod 755 /etc/opt/DiBaicinga/nrpe.cfg
+service nrpe restart 
+
+sudo chmod -R ugo+rX /etc/puppet/environments
+ 
+
+
+
+#### authorized #######################
+## key via osad 
+mkdir -p /export/home/$USER/.ssh
+chown -R $USER  /export/home/$USER
+chmod 700 /export/home/$USER/.ssh
+chmod 400 /export/home/$USER/.ssh/authorized_keys
+
+
+
+
+
+mkdir .ssh; chmod 700 .ssh; exit
+mkdir .ssh; mv authorized_keys .ssh; chmod 700 .ssh; exit
+mkdir -p /export/home/$USER/.ssh
+
+scp /export/home/$USER/.ssh/authorized_keys ${h}:~/authorized_keys
+scp /export/home/$USER/.bashrc ${h}:~/.bashrc
+
+chmod 700 /export/home/$USER/.ssh
+chmod 400 /export/home/$USER/.ssh/authorized_keys
+chown -R $USER.adm /export/home/$USER/.ssh
+
+
+groupadd -g 33214 icinga
+useradd -u 33214 -g icinga -s /bin/bash -r -m -d /export/home/icinga icinga
+mkdir -p /export/home/icinga/.ssh
+chmod 700 /export/home/icinga/.ssh
+chmod 400 /export/home/icinga/.ssh/authorized_keys
+chown -R icinga.icinga /export/home/icinga
+
+yum install -y DiBa-icinga-nrpe-RH5
+yum install -y DiBa-icinga-plugins-RH5
+
+yum install -y DiBa-icinga-nrpe-RH6
+yum install -y DiBa-icinga-plugins-RH6
+
+
+################################################################
+# Linux - How to check load on server 
+/opt/DiBaicinga/libexec/check_load -w 15,10,10 -c 30,25,20
+
+lsof -p id
+
+netstat -anp | sort -n
+netstat -anp
+netstat -plan
+
+top 
+
+uptime 
+
+## troubleshooting network
+netstat -i
+ethtool -S eth0|grep error
+
+## troubleshooting i/o 
+iostat -eE
+
+
+###########
+## satelitte commands
+# from agent with the file
+pushlocalcfg2sat.sh /etc/sudoers.d/sudoers_icinga
+
+# from satellite remote commands on the list of hosts
+rhncfg-client get /etc/sudoers.d/sudoers_icinga
+
+##############
+# rpm 
+##############
+rpmrebuild
+rpm2cpio
+rpm2cpio nrpe-2.12-16.el6.x86_64.rpm |cpio -id
+
+rpm -qa  # list all packages 
+rpm -qi package   # information for the package. 
+rpm -qa --qf '%{NAME} %{VENDOR}\n' | grep -v Red	## query package not from Red hat
+rpm -qa --qf "%{name}.%{arch}\n"|sort  			## list all package install on system
+rpm -qa --qf "%{name}.%{arch}.%{VENDOR}\n"|sort  > /tmp/rpm-pkg-`hostname`.rpt			## list all package install on system
+rpm -qa --qf "%{n}-%{v}-%{r}.%{arch}\n"|sort -u > /var/tmp/rpm-pkg-`hostname`-`date +%d%m%y`.start 
+
+rpm -qR <package> # RPM dependencies for a particular package
+
+yumdownloader --destdir=. <package> # RPM dependencies for a particular package
+rpm -qpR <package> # RPM dependencies for a particular package
+
+
+##############
+# yum 
+##############
+yum history info 32
+yum makecache
+yum reinstall package
+yum clean all
+yum verify-rpm package
+yum list package
+
+cat /usr/lib/rpm/macros
+
+DATE=`date +%d%m%y`
+DATE=`date +%d%m%y-%H%M`
+date +%Y-%m-%d
+date +%W   
+
+### GIT 
+## set up a new repo with the right permission for the team 
+mkdir sat-ansible
+chgrp adm sat-ansible/
+chmod 770 sat-ansible/
+cd sat-ansible/
+git init --bare --shared
+chgrp -R adm *
+##
+
+## branches
+# https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+git branch $USER
+git checkout -b $USER
+git checkout master
+git merge $USER 
+
+cat .gitconfig 
+find / -name .gitconfig -ls
+git add 
+git add .
+git add * 
+git add -a
+git add -A
+git add get-cacti_host-status.py get-patchstand-test-sat.py get-patchstand_test-sat.py host_status.rpt
+git add -m "start the git for the shared bin" 
+git add *py
+git add test.file 
+git add -v -A
+
+git alias
+
+git clone https://$USER@stash/scm/sat/diba-soe.git
+ln -s /opt/diba-soe/etc/diba-soe.px /opt/diba-soe/etc/diba-soe.conf
+ln -s /opt/diba-soe/etc/diba-soe.te /opt/diba-soe/etc/diba-soe.conf
+
+git clone https://$USER@stash/scm/sat/sat-ansible.git
+git clone https://$USER@stash/scm/~$USER/scripts.git ~/stash/scripts
+
+
+git clone https://$USER@stash/$USER/ds-sat-ansible ds-sat-ansible
+git clone https://$USER@stash/scm/sat/rh_appl_r10k.git
+git clone ssh://git@stash:7999/~$USER/ds-sat-ansible.git
+
+git clone $USER@$host:/APPL/GIT/$USER/scripts
+git clone $USER@$SERVER:/APPL/GIT/diba-ipa
+git clone $USER@$SERVER:/APPL/GIT/DiBa-OpenScap.git openscap
+git clone $USER@$SERVER:/APPL/GIT/puppet_modules/$mod $mod 
+git clone file:///APPL/$USER/share/bin
+
+git commit -a
+git commit -a -m "moved the python-workbook into the correct directory"
+git commit -m 'initial project version'
+
+git config alias "co=checkout"
+git config alias.co=checkout
+git config --global alias.st status
+git config --global user.email "d.stock@ing-diba.de"
+git config --global user.name "Dan Stock"
+git config --list
+
+git cp ~/scripts/connect.sh ./
+
+git diff
+git diff --cached
+
+git -h
+git init
+git instaweb --httpd=lighttpd
+git instaweb --httpd=webrick
+
+git log
+git log -p 
+git log --stat
+
+git mv python/python-workbook.py ./
+git push origin master
+
+git remote
+git remote -v
+
+git status
+
+git version 
+
+### errors with local changes and pull 
+git pull # error: Your local changes to the following files would be overwritten by merge:
+git stash
+git pull
+git stash apply --index
+
+vi .gitconfig 
+## add 
+[http]
+        sslverify = false
+
+vi .gitignore
+
+
+#### mysql tips 
+mysql -u root --password=???
+mysqlshow -u root --password=??? --status eventdb | awk '{print $20}'     
+
+mysql> use eventdb;                       
+mysql> show tables; 
+mysql> SELECT id, COUNT(id) FROM event;   
+mysql> SHOW COLUMNS FROM event; 
+mysql> DELETE FROM event WHERE created < DATE_SUB(CURDATE(), INTERVAL 60 DAY);   
+mysql> DELETE FROM icinga_statehistory WHERE state_time < DATE_SUB(CURDATE(), INTERVAL 60 DAY);      
+mysql> DELETE FROM icinga_flappinghistory WHERE event_time < DATE_SUB(CURDATE(), INTERVAL 60 DAY);    
+mysql> DELETE FROM icinga_commenthistory WHERE entry_time < DATE_SUB(CURDATE(), INTERVAL 60 DAY);
+mysql> DELETE FROM icinga_downtimehistory WHERE entry_time < DATE_SUB(CURDATE(), INTERVAL 60 DAY);
+mysql> DELETE FROM icinga_acknowledgements WHERE entry_time < DATE_SUB(CURDATE(), INTERVAL 15 DAY); 
+
+mysql> DELETE FROM icinga_notifications WHERE end_time < DATE_SUB(CURDATE(), INTERVAL 15 DAY);
+mysql> DELETE FROM icinga_logentries WHERE entry_time < DATE_SUB(CURDATE(), INTERVAL 15 DAY);
+
+mysql - for i in $TABLES; do echo "SHOW COLUMNS FROM $i;  DELETE FROM $i WHERE entry_time < DATE_SUB(CURDATE(), INTERVAL 15 DAY);" ; done 
+mysql - for i in $TABLES; do echo "SELECT COUNT(*) FROM $i;" ; done
+
+#### while loop
+cmd="./report_scheduled_action.py -v -a 680722 -r"
+i=0; while  [ $i -lt 100 ] ;do echo $i;i=`expr $i + 1 `; echo "nnnn" ;sleep 10 ; done
+
+i=0; while  [ $i -lt 100 ] ;do echo $i;i=`expr $i + 1 `; ps -ef |grep gzip|grep -v grep ;sleep 10 ; done
+i=0; while  [ $i -lt 100 ] ;do echo $i; echo "";i=`expr $i + 1 `; $cmd ;date; echo "################";sleep 10 ; done
+i=0; while  true ;do echo $i; echo "";i=`expr $i + 1 `; $cmd ;date; echo "################";sleep 10 ; done
+
+while read LINE; do echo "$host: $LINE" >> $OUT; done < $FILE
+i=0; while  [ $i -lt 100 ] ;do echo $i;i=`expr $i + 1 `;date; ping -c 2 $host|grep transmitted ;sleep 10 ; done
+
+i=0; while  [ $i -lt 100 ] ;do i=`expr $i + 1 `; cat id-05021199|cut -f$i -d',' ; done
+
+### icinga cluster
+service corosync stop
+
+crm_mon # get the cluster status
+
+##  - errors after the rebuild 
+service ido2db stop 
+service icinga stop 
+
+
+## grep tips
+grep -R pack *
+
+## snmp tips
+snmpwalk -v 2c -c secret $SERVER |grep -i scsi 
+snmpwalk -v 2c -c secret $SERVER .1.3.6.1.4.1.2021 |grep -i disk
+
+### ldap tips
+
+kinit ## ldapsearch AD login with $USER@domdibacorp
+ldapsearch -v -Y GSSAPI -H ldap://.diba.corp.int:389 -b "CN=Frimberger\, Andre (90019910),OU=Externe,OU=OU-DIBA,OU=OUNUE,dc=diba,dc=corp,dc=int"
+ldapsearch -v -Y GSSAPI -H ldap://$SERVER.diba.corp.int:389 -b "CN=Frimberger\, Andre (90019910),OU=Externe,OU=OU-DIBA,OU=OU-NUE,dc=diba,dc=corp,dc=int" |grep -A2 -i bigdata
+GR="CN=G_SP_ITB CC-BigData,OU=Berechtigungsgruppen,OU=Sammelpostfaecher,OU=Exchange,OU=Global-Groups,DC=diba,DC=corp,DC=int"
+ldapsearch -v -Y GSSAPI -H ldap://$SERVER.diba.corp.int:389 -b "${GR}" member
+
+
+ldapsearch -D "cn=directory manager" -b "dc=ipa,dc=corp,dc=int" -h $SERVER.ipa.corp.int 
+ldapsearch -D "cn=directory manager" -b "dc=ipa,dc=corp,dc=int"
+ldapsearch -x -LLL -h gf01sxmg047p.corp.int -D cn=proxyagent,ou=profile,dc=corp,dc=int -w proxy4ldap uid=$USER
+ldapsearch -x -h localhost -p 389 -b uid=ipara,ou=People,o=ipaca description
+ldapsearch -D cn=proxyagent,ou=profile,dc=corp,dc=int -w proxy4ldap  -x -b ou=people,dc=corp,dc=int uid=*  > /tmp/ldapsearch.output
+ldapsearch -D cn=proxyagent,ou=profile,dc=corp,dc=int -w proxy4ldap -x -b ou=people,dc=corp,dc=int uid=*
+## ipa ldapsearch 
+ldapsearch -x -h $SERVER.ipa.corp.int -b dc=ipa,dc=corp,dc=int
+
+
+### installation icinga 
+yum remove openldap-servers
+rm -fr /etc/openldap/slapd.d/* 
+rm -rf /var/lib/ldap/*
+yum install openldap-servers
+
+service mysqld stop
+rm -fr /var/lib/mysql/*
+rm -f /root/.my.cnf /APPL/icinga/.my.cnf /APPL/icinga/.my.icinga_web.cnf
+service mysqld start
+
+yum install ingdiba-icinga
+
+/usr/share/ingdiba-icinga/scripts/init_icinga.sh
+yum install LConf lconf-icinga-web
+/usr/share/ingdiba-icinga/scripts/init_lconf_ldap.sh
+
+/usr/share/ingdiba-icinga/scripts/init_lconf_web.sh
+
+yum install ingdiba-icinga-web-module ingdiba-icinga-web-toplevelview
+yum install ingdiba-icinga-eventdb eventdb-icinga-web
+
+mysql
+mysql> CREATE DATABASE eventdb;
+mysql> GRANT ALL ON eventdb.* TO eventdb@localhost IDENTIFIED BY 'eventdb';
+mysql> GRANT ALL ON eventdb.* TO icinga@localhost;
+
+mysql eventdb < /usr/share/doc/eventdb/db/mysql/createTables.sql
+
+
+### services 
+
+chkconfig ip6tables off
+
+
+service edbc start
+chkconfig edbc on
+
+service eventdb-snmptt start
+chkconfig eventdb-snmptt on
+
+vi /etc/sysconfig/snmptrapd
+OPTIONS="-On -t -C -c /etc/snmp/snmptrapd.conf -p /var/run/snmptrapd.pid"
+
+vi /etc/snmp/snmptrapd.conf
+disableAuthorization yes
+traphandle default /usr/sbin/eventdb-snmptthandler
+
+service snmptrapd start
+chkconfig snmptrapd on
+
+snmptrap -v 1 -c public localhost SNMPv2-MIB::coldStart localhost 2 0 ''
+echo -e "icinga-e\t127.0.0.1\t1\t5\t2014-04-01\t09:00:00\tUSER\ttestevent" >>/var/cache/eventdb-correlator/http.pipe
+
+cd /export/home/monitor/ 
+./usi.pl -s=./remote_list_open_ports.sh -g "Stage te" 
+./usi.pl -result /tmp/usi.pl.1398169821.21572.db
+
+#############################
+/usr/sbin/rsync -a --delete-before -vcur -e ssh $TARGET_DATA root@${HOST}:/opt/SUNWtlp/data
+
+#### EOF 
+cat > ./outfile <<DELIM
+hello proble
+h2 fadernaly
+DELIM
+
+echo "I just wrote 2 lines to the file ./outfile"
+
+exit 
+
+# cat /etc/ld.so.conf.d/* | grep -v -- '^\s*#\|^\s*$';
+# cat /etc/redhat-release;
+# cat /etc/resolv.conf;
+# cat /etc/sysconfig/network-scripts/ifcfg-eth0;
+# cat /etc/yum/pluginconf.d/subscription-manager.conf;
+# cat > /etc/yum.repos.d/rhel-homebrew.repo << EOF
+# cat /etc/yum.repos.d/rhel.repo;
+# cat > /etc/yum.repos.d/rhel.repo << EOF
+# cat /mnt/media.repo;
+$ cat /usr/share/doc/rpm-4.8.0/GROUPS;
+# cd /home/mockbuild/rpmbuild/RPMS/x86_64/;
+$ cd ~/rpmbuild/BUILD/;
+$ cd ~/rpmbuild/BUILD/vim72/;
+$ cd ~/rpmbuild/SPECS/;
+$ cp -ai mypackage.spec mypackage.spec.orig;
+$ cp -ai ~/rpmbuild/SOURCES/vim-10.4-version.patch ~/; ## backup
+$ cp -ai ~/rpmbuild/SPECS/vim.spec{,.orig};
+$ cp -ai src/version.h{,.orig};
+# cp -ai vim-7.2.411-1.8.el6.src.rpm /home/mockbuild/;
+$ cp -ai vim72/src/version.h{.orig,};
+$ createrepo --help;
+$ diff -Naur vim72/src/version.h.orig vim72/src/version.h > ~/rpmbuild/SOURCES/vim-10.4-version.patch;
+$ diff -Naur vim.spec.orig vim.spec;
+$ diff -Naur vim.spec.orig vim.spec > ~/vim-10.4-spec.patch;
+$ diff src/version.h.orig src/version.h;
+$ du -msc;
+$ du -ms ~/rpmbuild/BUILD/ ~/rpmbuild/BUILDROOT/;
+# du -ms /var/cache/yum/;
+$ echo '%debug_package %{nil}' >> ~/.rpmmacros;
+# echo "${LD_LIBRARY_PATH}";
+$ echo '%_smp_mflags -j4' >> ~/.rpmmacros;
+$ echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros;
+$ echo 'touch /tmp/myflag;' >> ~/rpmbuild/SOURCES/myscript;
+$ echo '#!/usr/bin/env sh'  > ~/rpmbuild/SOURCES/myscript;
+$ file ~/rpmbuild/SOURCES/vim-7.2-fstabsyntax.patch;
+$ find . -iname 'configure';
+$ find . -iname 'makefile';
+$ find . -iname '*.so';
+$ find ~/rpmbuild/BUILD/;
+$ find ~/rpmbuild/BUILDROOT/;
+$ find ~/rpmbuild/RPMS/;
+$ find ~/rpmbuild/RPMS/ | sort;
+$ find rpmbuild/ | sort;
+# find /var/cache/yum/ | sort;
+# gpg --list-keys;
+# 4bd6ec30
+$ grep -B1 -- '__jar_repack' ~/rpmbuild/SPECS/jboss-eap-6.1.spec;
+$ grep -- '^BuildRequires:' ~/rpmbuild/SPECS/vim.spec;
+$ grep -c '^processor\s*:' /proc/cpuinfo;
+$ grep -i -- '^Version:\|^Release:' ~/rpmbuild/SPECS/vim.spec;
+$ grep -i -- '^Version:\|^Release:' ~/rpmbuild/SPECS/vim.spec; Version: %{baseversion}.%{beta}%{patchlevel}
+$ grep -i -- '^Version:\|^Release:' ~/rpmbuild/SPECS/vim.spec;Version: %{baseversion}.%{beta}%{patchlevel}
+# groups mockbuild;
+$ head -n3 ~/rpmbuild/SOURCES/vim-10.4-version.patch;
+$ head -n3 ~/rpmbuild/SOURCES/vim-7.2-fstabsyntax.patch;
+$ ldd src/vim;
+# ldd `which cpio`;
+# ldd `which rpm`;
+# ll /lib64/libz*;
+# ll /mnt/HighAvailability/repodata/;
+# ll /mnt/Packages/*.rpm | wc -l;
+# ll /mnt/Server/repodata/;
+$ ll ~/rpmbuild/BUILD/;
+$ ll ~/rpmbuild/BUILDROOT/vim-10.4.100-1.0.el6.x86_64/;
+$ ll ~/rpmbuild/RPMS/x86_64/;
+$ ll ~/rpmbuild/RPMS/x86_64/repodata/;
+$ ll ~/rpmbuild/SOURCES/jboss-eap-*;
+$ ll ~/rpmbuild/SOURCES/*.tar.*;
+$ ll ~/rpmbuild/SPECS/;
+$ ll ~/rpmbuild/SPECS/jboss-eap-*;
+# ll /usr/share/vim/syntax/syntax.vim;
+# ll /var/lib/rpm/;
+# ll /var/lib/yum/;
+$ make -j4;
+# man rpm;
+$ md5sum -b mypackage.spec;
+$ md5sum -b vim.spec;
+$ mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}/;
+# mount -t iso9660 -o ro /dev/sr0 /mnt/;
+# mount -t tmpfs -o 'size=2G,mode=1777' tmpfs /home/mockbuild/rpmbuild/BUILD/;
+# mount -t tmpfs -o 'size=2G,mode=1777' tmpfs /home/mockbuild/rpmbuild/BUILDROOT/;
+$ patch -p1 < ~/rpmbuild/SOURCES/vim-10.4-version.patch;
+# ps -eLf | grep -i -- 'cc1';
+# repoquery --list 'rpm-build';
+$ rm -rf ~/rpmbuild/;
+$ rm -rf ~/rpmbuild/BUILD/ ~/rpmbuild/BUILDROOT/;
+$ rm -rf ~/rpmbuild/; ## clean start
+
+rpm --query --all --queryformat '%{NAME}:%{VERSION}:%{RELEASE}:%{ARCH}\n' > /tmp/rpm-report-`hostname -s`; chown $USER /tmp/rpm-report*; exit 
+rpm --query --all --queryformat '%{NAME}\n'|sort > /tmp/rpm-report-`hostname -s`; chown $USER /tmp/rpm-report*; exit 
+
+# rpm2cpio ../zlib-1.2.3-29.el6.x86_64.rpm | cpio --extract --make-directories --no-absolute-filenames --preserve-modification-time;
+$ rpmbuild -bb ~/rpmbuild/SPECS/mypackage.spec;
+$ rpmbuild -bs ~/rpmbuild/SPECS/mypackage.spec;
+$ rpmbuild --rebuild 'vim-7.2.411-1.8.el6.src.rpm';
+$ rpmbuild --showrc;
+$ rpmdev-bumpspec --comment='no midifications but testing the spec release bump' --userstring='forname surname <email@provider.tld>' ~/rpmbuild/SPECS/vim.spec;
+$ rpmdev-bumpspec --help;
+$ rpmdev-bumpspec --rightmost --comment='no midifications but testing the spec minor release bump' --userstring='forname surname <email@provider.tld>' ~/rpmbuild/SPECS/vim.spec;
+$ rpmdev-newspec;
+# rpm -e 'vim-common';
+# rpm -Fhv 'vim-x.y.z.rpm';
+# rpm -ivh /mnt/Packages/vim-enhanced-7.2.411-1.8.el6.x86_64.rpm;
+# rpm -ivh /mnt/Packages/vim-enhanced-7.2.411-1.8.el6.x86_64.rpm /mnt/Packages/vim-common-7.2.411-1.8.el6.x86_64.rpm;
+$ rpmlint ~/rpmbuild/SPECS/vim.spec;
+# rpm -qa --qf '%{NAME}\n' | sort;
+# rpm -qa --queryformat '\n\nPACKAGE: %{name}\n' --scripts | less;
+# rpm -qa --queryformat '\n\nPACKAGE: %{name}\n' --triggers | less;
+# rpm -qa | sort | grep 'ssh';
+# rpm -qa | sort | grep 'vim';
+# rpm -qa | sort | less;
+# rpm -qa | sort | while read PACKAGES; do echo "${PACKAGES}"; rpm -q --triggerscripts "${PACKAGES}" 2>&1; done | less;
+# rpm -qa | sort | while read PACKAGES; do echo "${PACKAGES}"; rpm -q --triggers "${PACKAGES}" 2>&1; done | less;
+# rpm -qa | sort | while read PACKAGES; do rpm -qV "${PACKAGES}" 2>&1; done | grep -v -- '^prelink:\|^S\.\?';
+# rpm -qa | sort | while read PACKAGES; do rpm -qV "${PACKAGES}" 2>&1; done | grep -v -- '^prelink:\|^S\.\?' | grep -v ' c ';
+# rpm -qf '/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release';
+# rpm -qi 'gpg-pubkey-2fa658e0-45700c69';
+# rpm -qip 'gpm-devel-1.20.6-12.el6.x86_64.rpm';
+$ rpm -qip ~/rpmbuild/RPMS/x86_64/vim-common-10.4.100-1.0.el6.x86_64.rpm;
+$ rpm -qip ~/rpmbuild/RPMS/x86_64/vim-common-7.2.411-1.8.el6.x86_64.rpm;
+$ rpm -qip ~/rpmbuild/RPMS/x86_64/vim-common-7.2.411-2.8.el6.1.x86_64.rpm;
+$ rpm -qip ~/rpmbuild/SRPMS/MyPackage-1.0-1.el6.src.rpm;
+# rpm -qip 'vim-7.2.411-1.8.el6.src.rpm';
+# rpm -qi zlib-1.2.3-29.el6.x86_64;
+# rpm -ql 'gpg-pubkey-2fa658e0-45700c69';
+# rpm -ql 'gpg-pubkey-fd431d51-4ae0493b';
+$ rpm -qlp ~/rpmbuild/RPMS/x86_64/MyPackage-1.0-1.el6.x86_64.rpm;
+$ rpm -qlp ~/rpmbuild/SRPMS/MyPackage-1.0-1.el6.src.rpm;
+# rpm -ql zlib;
+$ rpm -qpi ~/rpmbuild/RPMS/noarch/jboss-eap-6.1-6.1.1-1.el6.noarch.rpm;
+$ rpm -qp --qf '[%{FILENAMES}\t%{FILEFLAGS:fflags}\n
+$ rpm -qpR ~/rpmbuild/RPMS/x86_64/MyPackage-1.0-1.el6.x86_64.rpm;
+# rpm -q --qf '[%{FILEMODES:perms} %{FILENAMES}\n
+# rpm -q --qf '%{NAME} %{INSTALLTIME:date}\n' 'zlib';
+# rpm -q --qf '%{NAME} %{INSTALLTIME}\n' 'zlib';
+# rpm -q --qf '[%{PROVIDENAME} %{PROVIDEFLAGS:depflags} %{PROVIDEVERSION}\n
+# rpm -q --qf '[%{REQUIRENAME} %{REQUIREFLAGS:depflags} %{REQUIREVERSION}\n
+# rpm -q --scripts 'openssh';
+# rpm -q --scripts 'openssh-server';
+# rpm --query --all --queryformat '%{NAME}\n' | sort;
+# rpm --query --all --queryformat '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort;
+# rpm --querytags;
+# rpm -qV zlib; echo $?;
+# rpm -Uhv 'http://.../vim-x.y.z.rpm';
+$ rpm -Uhv 'vim-7.2.411-1.8.el6.src.rpm';
+# rpm -Uhv 'vim-x.y.z.rpm';
+# sed -i 's%^enabled\s*=.*%enabled=0%' /etc/yum/pluginconf.d/subscription-manager.conf;
+for i in $h; do host $i |awk '{print $1,$4}'|sed 's/.corp.int//' ; done
+$ src/vim;
+# su - 'mockbuild';
+$ time createrepo --workers='4' --repo="my personally patched rhel6 packages" --update ~/rpmbuild/RPMS/x86_64/;
+$ time rpmbuild -ba --clean ~/rpmbuild/SPECS/vim.spec;
+$ time rpmbuild -bb --nobuild ~/rpmbuild/SPECS/vim.spec;
+$ time rpmbuild -bi --short-circuit ~/rpmbuild/SPECS/vim.spec;
+$ time rpmbuild --rebuild 'vim-7.2.411-1.8.el6.src.rpm';
+# touch /lib64/libz.so.1.2.3;
+$ touch ~/rpmbuild/SOURCES/myconfig;
+$ touch ~/rpmbuild/SOURCES/myfile;
+$ unzip -tv 'eap6-rpm-infra-master.zip';
+$ vim mypackage.spec;
+$ vim -R src/version.h;
+# vim --version;
+# yum --assumeyes install 'rpm-build';
+# yum -C grouplist | grep -i -- 'devel';
+# yum check-update; yum -y update && yum clean packages;
+# yum clean all;
+# yum -C search all 'rpm';
+# yum -C search 'rpm';
+# yum -C search yum;
+# yumdownloader --source 'vim-enhanced';
+# yumdownloader zlib;
+# yum groupinstall 'Additional Development'; ## optional
+# yum grouplist;
+# yum --help;
+# yum help history;
+# yum history;
+# yum history info '2';
+# yum info '2';
+# yum info yum-presto;
+# yum list installed 'ASDF'; echo $?;
+# yum list installed | less;
+# yum list installed 'rpm-build-4.8.0-37.el6'; echo $?;
+# yum list installed 'rpm-build-4.8.0-37.el6.x86_64'; echo $?;
+# yum list installed 'rpm-build'; echo $?;
+# yum list installed 'vim-*';
+# yum localinstall vim-common-10.4.100-1.0.el6.x86_64.rpm vim-enhanced-10.4.100-1.0.el6.x86_64.rpm;
+# yum makecache;
+# yum reinstall 'zlib';
+# yum repolist;
+# yum resolvedep 'rpm';
+# yum search --disablerepo='rhel-distri-homebrew' --showduplicates 'vim';
+$ yum search lsb;
+# yum search --showduplicates 'vim';
+# yum --showduplicates search 'rpm-build';
+# yum --showduplicates search 'zlib';
+# yum version;
+# yum whatprovides '*/auto-br-rpmbuild';
+# yum whatprovides '*/repoquery';
+# yum whatprovides '*/rpm';
+# yum whatprovides '*/rpmbuild';
+# yum whatprovides '*/rpmsetuptree';
+# yum whatprovides '/usr/share/vim/syntax/syntax.vim';
+# yum -y downgrade vim-common-7.2.411-1.8.el6 vim-enhanced-7.2.411-1.8.el6;
+# yum -y groupinstall 'Development tools';
+# yum -y install 'createrepo';
+# yum -y install python-devel ncurses-devel libacl-devel gpm-devel libselinux-devel gtk2-devel libSM-devel libXt-devel libXpm-devel;
+# yum -y install rpm-build redhat-rpm-config rpmdevtools;
+# yum -y install 'rpmlint';
+# yum -y install 'vim-enhanced';
+# yum -y localinstall 'gpm-devel-1.20.6-12.el6.x86_64.rpm';
+# yum -y remove 'vim-common';
+yum install --nogpgcheck 
+
+
+### Connect system to sat5 with bootstrap
+wget http://$SERVER/pub/bootstrap/bootstrap-generic.sh
+
+mv /etc/sysconfig/rhn/systemid /tmp/
+service osad stop 
+chmod +x bootstrap-generic.sh 
+./bootstrap-generic.sh app=bigdata stage=te
+service osad start
+
+service osad stop; rm -f /etc/sysconfig/rhn/osad-auth.conf; service osad start
+list_osa_not_online.py
+#
+#
+#
+### job set_ldap_hostsallowedlogin.sh
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -n itb_ic,pj_bd
+
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -s
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -k
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -a
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -l
+exit 
+
+ldapsearch -x -LLL -h $SERVER.corp.int -D cn=proxyagent,ou=profile,dc=corp,dc=int -w proxy4ldap uid=$USER
+ldapsearch -x -LLL -h $SERVER.corp.int -D cn=proxyagent,ou=profile,dc=corp,dc=int -w proxy4ldap uid=$USER
+
+
+[monitor@$SERVER ~]$ ./usi.pl -s=remote_ck_poodle.sh -g "Location DMZ103" # sat scheduel jobs auswerten
+
+
+touch /var/tmp/ds; ls /var/tmp/ds; rm /var/tmp/ds
+cat /proc/mounts |grep ro|grep -v rw
+
+## set envronment colors
+#
+:colorscheme desert 
+:colorscheme zellner
+:colorscheme peachpuff
+:colorscheme elflord
+
+# dark hi contrast
+:colorscheme murphy
+
+:colorscheme blue
+:colorscheme darkblue
+:colorscheme default
+:colorscheme delek
+:colorscheme desert
+:colorscheme elflord
+:colorscheme evening
+:colorscheme koehler
+:colorscheme morning
+:colorscheme murphy
+:colorscheme pablo
+:colorscheme peachpuff
+:colorscheme ron
+:colorscheme shine
+:colorscheme slate
+:colorscheme torte
+:colorscheme zellner
+
+## hp hardware commandline 
+hpssacli 
+hpssacli ctrl all show config detail
+hpssacli ctrl slot=0 logicaldrive 7 show detail
+hpssacli ctrl all logicaldrive 11 delete
+hpssacli ctrl slot=0 create type=ld drives=1I:1:11 raid=0
+
+## add a graph to cacti
+# log on to the cactiuser@$SERVER
+su - cactiuser
+~/add_linux_client.sh hostname descriptin
+~/add_linux_client.sh $SERVER Lionbox HA
+
+## call the patch report html from cacti / snmp 
+Abfrage einzelner  Hosts:
+
+Abfrage von Satellite Gruppen:
+alle TE Maschinen:
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=stage_te&c=patch_generic
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=service_j2ee&c=patch_generic
+https://cacti/cgi-bin/system_snmp.py?g=stage_px/service_j2ee&c=patch_generic 
+
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=sysowner_$USER/stage_te&c=patch_generic
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=sysowner_vl_ititeamapplicationsupport/stage_te&c=patch_generic
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=sysowner_sp_itcbjeeapplications/stage_te&c=patch_generic
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=sysowner_cgebhardt/stage_te&c=patch_generic
+sp_itcbjeeapplications
+
+https://cacti/cgi-bin/system_snmp.py?g=stage_px/${GRP}&c=patch_generic 
+https://cacti/cgi-bin/system_snmp.py?g=stage_te/${GRP}&c=patch_generic 
+https://cacti/cgi-bin/system_snmp.py?g=stage_qa/${GRP}&c=patch_generic 
+
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=stage_te&c=patch_generic
+
+alle QA Maschinen:
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=stage_qa&c=patch_generic
+
+alle PX Maschinen:
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=stage_px&c=patch_generic
+
+
+alle Maschinen (dauert ~80Sekunden):
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=all&c=patch_generic
+
+
+https://cacti.corp.int/cgi-bin/system_snmp.py?g=l&c=patch_generic
+
+######################################################################
+## begin
+## satellite6, sat6
+hammer host list > /APPL/$USER/share/data/sat6-px.data
+ssh $SERVER hammer host list > /APPL/$USER/share/data/sat6-px.data
+hammer user list > /APPL/$USER/share/data/sat6-px.data
+hammer organization create --name "ACME" --label "ACME" --description "SOEReference Architecture example org"
+hammer subscription list --organization=INGDiBa                  
+hammer subscription upload --organization "ACME" --file "/tmp/manifest.zip"
+
+## bootstrap the host
+
+cd /root/
+wget -O /root/bootstrap.py http://$SERVER.ipa.corp.int/pub/bootstrap.py
+chmod +x /root/bootstrap.py
+/root/bootstrap.py -l admin -s $SERVER.ipa.corp.int -o INGDiBa -L VCS_LINUX -g "hg_t/hg_t_rhel7/hg_t_rhel7_appl" -a akey_t_rhel7_appl -f 
+/root/bootstrap.py -l admin -s $SERVER.ipa.corp.int -o INGDiBa -L VCS_LINUX -g "hg_t/hg_t_rhel6/hg_t_rhel6_appl" -a akey_t_rhel7_appl -f 
+/root/bootstrap.py -l admin -s $SERVER.ipa.corp.int -o INGDiBa -L VCS_LINUX -g "hg_t/hg_t_rhel7/hg_t_rhel7_appl" -a akey_t_rhel7_appl -f --add-domain=corp.int 
+
+
+
+## forman
+foreman-debug
+
+# stop pending tasks in SAT6
+service foreman-tasks stop
+foreman-rake console
+> ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::Repository::Sync").destroy_all
+> ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::Repository::CapsuleGenerateAndSync").destroy_all
+> quit
+service foreman-tasks start
+
+## check on the services running
+sudo su - postgres -c "psql -d foreman -c 'select label,count(label),state,result from foreman_tasks_tasks where state != '\''stopped'\'' group by label,state,result ORDER BY label;'"
+
+
+## puppet commands
+# Agent:
+puppet agent -t --debug
+puppet agent -t --debug --waitforcert=500
+cd /var/lib/puppet/ssl/
+mv * /tmp/
+
+puppet resource user
+facter 
+facter ipaddress
+facter kernelversion
+facter timezone
+facter uptime
+facter uptime_days
+facter macaddress
+facter processorcount
+facter puppetversion
+facter selinux_enforced
+facter hostname
+facter memorytotal
+facter memoryfree
+facter operatingsystemrelease 
+facter virtual
+
+
+
+Puppet-Master:
+puppet cert list |grep $Agent
+puppet cert sign $Agent
+puppet cert list --all |grep -i $Agent
+
+
+## puppetdb
+
+/etc/puppet/node.rb $SERVER.corp.int
+
+
+## if the puppet isn't installed 
+
+yum downgrade ksh-20120801-21.el6.x86_64
+
+# fuer die puppetpakete, mv-20150130
+yum -y install facter hiera puppet ruby-augeas rubygem-json 
+
+###### configurate the client 
+echo "server=puppet" >> /etc/puppet/puppet.conf
+cat >> /etc/sysconfig/puppet <<EOF
+# The puppetmaster server
+PUPPET_SERVER=puppet
+
+# If you wish to specify the port to connect to do so here
+PUPPET_PORT=8140
+
+# Where to log to. Specify syslog to send log messages to the system log.
+PUPPET_LOG=/var/log/puppet/puppet.log
+
+# You may specify other parameters to the puppet client here
+PUPPET_EXTRA_OPTS=--waitforcert=500
+EOF
+
+#
+chkconfig puppet on
+
+puppet agent -t --debug --noop 
+
+rm -rf /var/lib/puppet/ssl/*    
+
+puppet agent -t --debug --noop 
+
+katello-installer --katello-proxy-url=http://serverproxy.corp.int --katello-proxy-port=8080 --katello-proxy-username=<proxyuser> --katello-proxy-password="<proxypassword>"
+katello-installer --capsule-tftp true
+katello-installer --upgrade
+katello-service restart
+katello-service stop
+katello-service start
+ 
+
+
+ 
+########## rhel 7 
+systemd-analyze blame
+systemctl 
+ 
+systemctl status tftp
+getenforce
+journalctl -xn
+journalctl -f -l
+journalctl -l|fgrep tftp
+ 
+systemctl status tftp -l
+cat /usr/lib/systemd/system/tftp.service
+/usr/sbin/in.tftpd -s /var/lib/tftpboot
+systemctl stop tftp
+systemctl start tftp
+ls -la /var/lib/tftpboot/pxelinux.cfg/
+cat /var/lib/tftpboot/pxelinux.cfg/01-00-50-56-a7-4e-45
+ 
+curl http://$SERVER.corp.int:80/unattended/provision?token=a5284bb3-8d4d-4c5b-a664-ac9b3bee1caf | less
+ 
+sestatus
+systemctl status xinetd
+fgrep tftp /etc/services
+netstat -an |fgrep -i listen
+netstat -un
+netstat -ua
+ 
+systemctl list-units --type service --all
+
+ 
+lsof -Pni :69
+ 
+cd /var/log/foreman
+less production.log
+ 
+cd /var/log/
+tail -f messages foreman/production.log httpd/*log
+ 
+yum update
+yum update --assumeno
+ 
+echo $LANG
+export LANG="en_US.UTF-8"
+export LANG="de_DE.UTF-8"
+ 
+iptables -L -n -v
+ 
+man dhcpd.conf
+
+## end sat6 ####################################
+################
+
+cd /export ; ls -l 
+mv home home-org
+
+ln -s /home home         
+mv home-org/* home/
+
+rm -Rf home-org 
+
+
+####################
+correct the FQDN 
+
+hostname 
+read A
+echo `hostname`.corp.int > /etc/hostname
+hostname `hostname`.corp.int
+echo HOSTNAME=`hostname` >> /etc/sysconfig/network
+vi /etc/sysconfig/network
+
+####
+hostname 
+
+hostname `hostname`.corp.int 
+cat /etc/hostname
+grep HOST /etc/sysconfig/network
+
+
+
+################
+## ansible 
+cat /etc/ansible/hosts
+
+ansible -o qa -a 'ls -dl /export/home'
+
+## ansible -i INVENTORY
+ansible -i hosts -o bd-tmp -a 'df -h'
+ansible -i hosts -o bd-test -a 'hostname' -s -v
+
+## ansible playbook
+ansible-playbook -i hosts -k ply-$USER-auth-key.yml
+
+## ansible run in background (-B) max 1800 sec and poll (-P) every 60 sec. 
+ansible all -B 1800 -P 60 -a "/usr/bin/long_running_operation --do-stuff"
+
+
+###############
+## oscap - openscap  - a command line tool that allows users to load, scan, validate, edit, and export SCAP documents
+oscap info ingdiba.base-oval.xml
+# Scanning 
+oscap xccdf eval --profile RHEL6-Default --results results.xml --report report.html /root/scap/U_RedHat_6_V1R4_Benchmark-xccdf.xml
+oscap oval eval --results oval-results.xml ingdiba.base-oval.xml
+oscap oval eval --id oval:rhel:def:1000 --results oval-results.xml scap-oval.xml
+oscap xccdf eval --profile "stig-rhel6-server-upstream" --results /opt/rsa/openscap/`hostname`-ssg-results.xml --report /opt/rsa/openscap/`hostname`-ssg-results.html --cpe /usr/share/xml/scap/ssg/content/ssg-rhel6-cpe-dictionary.xml /usr/share/xml/scap/ssg/content/ssg-rhel6-xccdf.xml
+
+# SCAP Content Validating 
+oscap ds sds-validate scap-ds.xml
+oscap oval validate --schematron ingdiba.base-oval.xml
+
+# Content Transformation 
+oscap xccdf generate guide ingdiba-xccdf.xml > guide.html
+oscap xccdf generate guide --profile APPL ingdiba-xccdf.xml > guide.html
+oscap xccdf generate report xccdf-results.xml > report-xccdf.html
+
+# DISA Guide
+oscap xccdf eval --profile MAC-1_Public --results results.xml --report report.html --cpe U_RedHat_6_V1R4_Benchmark-cpe-dictionary.xml U_RedHat_6_V1R4_Benchmark-xccdf.xml
+
+# Fix the fails
+oscap xccdf generate fix --result-id xccdf_org.open-scap_testresult_stig-rhel6-server /var/www/html/results.xml
+oscap xccdf generate fix  /var/www/html/results.xml                     
+
+Open Vulnerability and Assessment Language - Element Dictionary
+
+
+## default oscap scan 
+oscap xccdf eval --profile APPL --results /tmp/results.xml --report /tmp/report.html /usr/share/xml/scap/ingdiba/ingdiba-xccdf.xml
+
+## 
+grep -n "<Profile" ingdiba-xccdf.xml
+l /usr/share/xml/scap/ssg/content/
+sed -n '403,413p' /usr/share/xml/scap/ssg/content/ssg-rhel6-xccdf.xml
+
+####
+# on sat px openscap report
+cd /home/mvoelker/python
+./list_oscap.py --system $SERVER $SERVER >
+/var/www/html/pub/oscap.html
+-> https://$SERVER/pub/oscap.html
+./list_oscap.py -g "Anwendung OpenSCAP" > /var/www/html/pub/oscap.html
+
+
+#########
+## advanced analytics hadoop filesystem parameters
+
+echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag
+echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+
+chkconfig ip6tables off
+
+cat /etc/hosts |grep -v localhost6 > /tmp/hosts.tmp
+cat /tmp/hosts.tmp > /etc/hosts
+rm -f /tmp/hosts.tmp
+
+exit
+
+##
+tune2fs -m 0 /dev/
+
+df -h 
+for i in `df -h|grep disk|awk '{print $1}'`; do tune2fs -m 0 $i; done  
+
+### rhel7
+systemctl |grep ntp 
+
+
+### firewall, iptables, fw, firewall-cmd
+http://www.certdepot.net/rhel7-get-started-firewalld/
+systemctl status firewalld
+firewall-cmd --state
+firewall-cmd --get-default-zone
+firewall-cmd --get-active-zones
+firewall-cmd --permanent --add-port="5666/tcp"
+firewall-cmd --zone=public --list-all
+firewall-cmd --reloadq
+
+iptables --list
+systemctl status firewalld
+systemctl restart firewalld
+systemctl list-dependencies firewalld
+
+
+
+## subscription manager
+rpm -i http://$SERVER/pub/katello-ca-consumer-latest.noarch.rpm   ## key for subscription 
+
+subscription-manager status
+subscription-manager list --available --all
+subscription-manager list --available --all|egrep "Name|Pool"
+subscription-manager list --available --all|egrep -i "corp|Pool"
+
+
+subscription-manager repos --list
+subscription-manager refresh
+subscription-manager unregister
+subscription-manager register --org="INGDiBa"
+subscription-manager register --org="INGDiBa" --activationkey="akey_t_rhel7_appl"
+subscription-manager register --org="INGDiBa" --activationkey="ing-diba_libary_default_org"
+subscription-manager attach --pool=$P
+subscription-manager enable --pool=$P
+subscription-manager repos  --enable rhel-7-server-rh-common-rpms --enable rhel-7-server-rpms
+subscription-manager repos --enable rhel-6-server-satellite-tools-6.2-rpms
+--enable rhel-6-server-rpms --enable rhel-6-server-satellite-tools-6.2-rpms
+subscription-manager repos --disable rhel-6-server-satellite-tools-6.2-rpms
+subscription-manager repos --enable rhel-server-rhscl-7-rpms --enable rhel-7-server-satellite-tools-6.2-rpms
+
+yum install katello-agent
+yum install open-vm-tool
+
+for P in $h; do subscription-manager attach --pool=${P}; done
+
+## oneliners
+LIST=""; for i in $h; do LIST="$LIST $i,"; done; echo "H=[${LIST}]"                      
+LIST=""; for i in $h; do LIST="$LIST '${i}',"; done; echo "S=[${LIST}]"
+
+################
+
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -n iti_sbs
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -a
+/usr/local/bin/set_ldap_hostsallowedlogin.sh -s
+
+/usr/local/bin/sudo_tmp_user.sh marweber
+
+
+################
+mkdir -p /APPL/usr/openv
+ln -s /APPL/usr/openv /usr/openv
+ln -s /tmp/source /tmp/target
+
+## Installation NetBackup Client
+cd /tmp
+wget http://$SERVER/pub/NetBackup_7.6.0.1_CLIENTS2_small.tar.gz
+tar xvf NetBackup_7.6.0.1_CLIENTS2_small.tar.gz
+(echo y;sleep 2;echo y;sleep 2;echo nbu50; sleep 2;echo y)|./NetBackup_7.6.0.1_CLIENTS2/install
+rm -rf ./NetBackup_7.6.0.1_CLIENTS*
+rhn-profile-sync
+
+## gzip 
+gzip -dc monitoring-plugins-2.x.tar.gz | tar -xf -   ## unpack
+tar -zxvf tar-archive-name.tar.gz   ## tar unpack 
+tar -zcvf tar-archive-name.tar.gz source-folder-name ## tar pack 
+
+
+###
+puppetDB - run on the DB System
+curl -v -X GET http://localhost:8082/v3/resources --data-urlencode query@get_facts 
+get_facts::["=", "certname", "$SERVER.corp.int"]
+ 
+
+
+
+###
+MASTER="https://master.puppetlabs.vm:4433"
+curl -X GET -H "Accept:pson" ${CERT_OPTIONS} $MASTER/puppet/v3/node/training.puppetlabs.vm?environment=production
+{"name":"training.puppetlabs.vm","environment":"production"}
+
+##################################
+## lvm - LVM resize disk2
+for i in {a..g}; do cat /sys/block/sd$i/size; done
+
+echo 1 > /sys/block/sdb/device/rescan
+for i in /sys/class/scsi_host/host[0-9] ; do echo "- - -" > $i/scan; done
+partprobe
+ 
+lsblk 
+lsblk -P -b|fgrep 'TYPE="disk"'
+<<<<<<< HEAD
+=======
+
+df -h
+vgs
+vgdisplay
+
+fdisk -l
+fdisk /dev/sdb
+partx -a /dev/sdb
+partprobe /dev/sdb2
+cat /proc/partitions
+pvcreate /dev/sdb2
+vgextend vgappl.01 /dev/sdb2
+lvextend -l +100%FREE /dev/mapper/vgappl.01-lgappl.01
+resize2fs /dev/mapper/vgappl.01-lgappl.01
+
+## end -
+##################################
+## r10k
+
+/APPL/home/jenkins/r10k/bin/r10k deploy environment -c r10k/r10k.yaml -p -v
+
+######## general infos
+https://eval.skillport.eu/ 
+BN: Oemer.Tafrali@ing-diba.de 
+KW: welcome 
+
+##
+domdibacorp\$USER
+
+
+## 
+cp /etc/shadow /etc/shadow-org
+echo 'root:$1$7w8PQRMy$6egmP70uvulGIvHVMnszc0:16896:0:99999:7:::' > /etc/shadow-new
+grep -v "root:" /etc/shadow >> /etc/shadow-new
+cat /etc/shadow-new > /etc/shadow
+
+>>>>>>> 6e0ff849a3f93bcdcdf1af6ca70084344bd37d31
+
+df -h
+vgs
+vgdisplay
+
+fdisk -l
+fdisk /dev/sdb
+partx -a /dev/sdb
+partprobe /dev/sdb2
+cat /proc/partitions
+pvcreate /dev/sdb2
+vgextend vgappl.01 /dev/sdb2
+lvextend -l +100%FREE /dev/mapper/vgappl.01-lgappl.01
+resize2fs /dev/mapper/vgappl.01-lgappl.01
+
+## end -
+##################################
+## r10k
+
+/APPL/home/jenkins/r10k/bin/r10k deploy environment -c r10k/r10k.yaml -p -v
+
+
+################################
+## work on wk
+# create a file for each wk with the host in that wk in the file
+b=`cat /ConfigData/data/satellite-patch-report.data |cut -f18 -d:|cut -f3 -d' '|grep -v Platform |sort -u`
+for i in $b; do echo $i; cat /ConfigData/data/satellite-patch-report.data |grep $i|cut -f1 -d':'|cut -f1 -d. >> /tmp/$i; done
+
+# create an ansible host file
+for i in $b; do echo [$i] >> hosts; cat /ConfigData/data/satellite-patch-report.data |grep $i|cut -f1 -d':'|cut -f1 -d. >> hosts; echo "" >> hosts; done 
+
+
+########
+## tcp dump zu root
+sudo /sbin/tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/.test -Z root
+tcpdump -i eth0 -n not port 22 and ' host $SERVER or host $SERVER '
+
+
+######## general infos
+
+https://eval.skillport.eu/ 
+BN: Oemer.Tafrali@ing-diba.de 
+KW: welcome 
+
+TAG
+
+### ipa server commands
+ipactl start
+ipactl stop 
+ipactl restart 
+
+ipa help commands
+ipa help topics
+
+ipa-backup --gpg --gpg-keyring=/root/backup
+ipa-restore /path/to/backup
+ipa user-mod
+
+## add a windows AD group to an ipa group
+ipa group-add-member ipa-g_ci_aaexpenv-iaa_builder_users --external "diba.corp.int\g_ci_aaexpenv-iaa_builder_users"
+
+ssh -l $USER@domdibacorp $SERVER
+ssh -l ipa-$USER $SERVER
+
+##
+ipa-$USER
+$USER@domdibacorp
+domdibacorp\$USER
+. /export/home/$USER/.bashrc 
+
+
+## --------------------------------
+ipa-client installation 
+yum install ipa-client
+yum install oddjob
+
+
+##### openssl
+openssl req -new -sha512 -key $SERVER.key -out $SERVER.csr -subj '/C=DE/ST=Hessen/L=Frankfurt/O=VCS Linux/CN=$SERVER.ipa-test.corp.int'
+
+yum install DiBa-certs
+openssl x509 -in ipa-testBASE.cer -text
+
+certutil -d /etc/pki/pki-tomcat/alias -L
+
+
+
+dig ipa-test.corp.int ns @$IP
+
+earch -x -b "cn=mapping tree,cn=config" -D "cn=Directory Manager" 
+-w YOURPASSWORD objectClass=nsDS5ReplicationAgreement
+nsds5replicaLastUpdateStatus -LL 
+
+ldapsearch -x -b "cn=mapping tree,cn=config" -D "cn=Directory Manager" -w YOURPASSWORD objectClass=nsDS5ReplicationAgreement nsds5replicaLastUpdateStatus -LL
+ldapsearch -x -b "cn=mapping tree,cn=config" -D "cn=Directory Manager" -W objectClass=nsDS5ReplicationAgreement nsds5replicaLastUpdateStatus -LL
+
+#### chronyd 
+
+/etc/chrony.conf
+chronyc tracking
+chronyc sources
+chronyc sourcestats
+chronyd -q 
+systemctl status chronyd
+systemctl restart chronyd
+systemctl enable chronyd
+
+
+### regex
+# regex username, username@domain.name, and DOMAIN\username
+re_expression = (((?P<domain>[^\\]+)\\(?P<name>.+$))|((?P<name>[^@]+)@(?P<domain>.+$))|(^(?P<name>[^@\\]+)$))   ## regex
+
+
+## audit 
+ausearch -ts 03/31/2017 11:42:00 -te 03/31/2017 11:43:00
+aureport -ts 03/31/2017 11:40:00 -te 03/31/2017 11:44:00
+/sbin/ausearch -x shutdown -i
+
+
+
+h=`grep Host ~/tmp.txt | awk '{print $2}'`
+
+id $USER@diba.corp.int | tr "," "\n"
+GRP=`id -Gn $USER@diba.corp.int`; for i in $GRP; do echo $i;done
+
+

@@ -1,0 +1,437 @@
+# Settings 
+. /opt/diba-soe/etc/hammer_defaults.conf
+
+ORG="$ORG"
+hammer -d # is your freind
+
+hammer --csv lifecycle-environment list --organization $ORG|tail -n +2
+
+
+#####################################################################################################
+## LINKS
+# http://blog.fite.cat/2014/10/first-steps-with-hammer-and-red-hat-satellite-6-0/
+# http://gsw-hammer.documentation.rocks/installation_medium.html
+
+############################
+## medium 
+hammer medium list
+hammer --csv medium list |grep x86_64_6|cut -f1 -d','
+hammer --csv medium list |grep x86_64_7|cut -f1 -d','
+
+#####################################################################################################
+## import 
+# Transitioning Configuration Channels and Files to Puppet Modules
+hammer import config-file --csv-file /tmp/exports/config-files-latest.csv
+
+#####################################################################################################
+## host  ##########################
+hammer host list > /APPL/dstock/share/data/sat6-px.data
+hammer host info --id 3                                                  
+hammer host facts --id 3
+hammer host errata list --id 3
+
+## host create a new host ##########################
+MAC=00:50:56:a9:25:25
+VMNAME=gf0vsxmg005e
+HG=hg_rhel7
+ORG=$ORG
+LOC=VCS_LINUX
+PASS=redhat00
+
+hammer host create --hostgroup="${HG}" --name="${NAME}"  --mac="${MAC}" --root-password="${PASS}" --organization "${ORG}" --location "${LOC}"
+hammer host create --hostgroup=${HG} --name=${NAME}  --mac=${MAC} --root-password="redhat00" --organization "${ORG}" --location "${LOC}"
+### not ok: hammer host create --hostgroup $HG --name $VMNAME  --mac $MAC --ask-root-password yes --organization "${ORG}" --location "${LOC}"
+
+/bin/hammer host set-parameter --host "${NAME}" --name $PARMA --value $VALUE
+hammer host set-parameter --host $host --name reinstall --value true 
+hammer host set-parameter --host $host --name h_stage --value $stage
+hammer host set-parameter --host $host --name h_application --value $app
+hammer host set-parameter --host $host --name h_anwendung --value $anwendung
+hammer host set-parameter --host $host --name h_wartung --value $wk
+hammer host set-parameter --host $host --name h_tranch --value $tr
+hammer host set-parameter --host $host --name h_contact --value $contact # list
+hammer host set-parameter --host $host --name h_email --value $email # list
+hammer host set-parameter --host $host --name h_cfg_channels --value $cfg # list
+hammer host set-parameter --host $host --name h_ldapgroup --value $ldap # list
+
+hammer host update --hostgroup=$hg --name $host --organization $ORG
+
+hammer host delete-parameter --host $host --name h_ldap
+
+## get info about host
+/bin/hammer host info --name $host
+
+
+ci_create-wk-groups.py:    HPCOMMON = '/bin/hammer host set-parameter --host %s' % FQN
+ci_create-wk-groups.py:                    wk_call = get_results(SAT_API + "hosts/" + FQN + "/parameters/wartung")
+ci_create-wk-groups.py:                    tr_call = get_results(SAT_API + "hosts/" + FQN + "/parameters/tranch")
+
+
+#####################################################################################################
+## hostgroup ##########################
+hammer hostgroup list --organization $ORG
+hammer hostgroup delete --id $ID
+hammer hostgroup set-parameter --name kt_activation_keys --value <name_of_first_key>, <name_of_second_key>,... --hostgroup <hostgroup_name>
+hammer hostgroup set-parameter --name kt_activation_keys --value <name_of_first_key>, <name_of_second_key>,... --hostgroup-id <id>
+hammer hostgroup set-parameter --name cfg_channels --value cfg-appl-px-rhel-server-6  --hostgroup-id 133
+
+
+#####################################################################################################
+## user info ##########################
+hammer user list > /APPL/dstock/share/data/sat6-px.data
+
+#####################################################################################################
+## organization ##########################
+hammer organization create --name $ORG --label "$ORG" --description "SOEReference Architecture example org"
+
+#####################################################################################################
+## subscriptsion ##########################
+hammer subscription list --organization=$ORG                  
+hammer subscription upload --organization "$ORG" --file "/tmp/manifest.zip"
+
+
+#####################################################################################################
+## location ##########################
+## Create the location ##########################
+LOCATIONS="munich munich-dmz boston"
+for LOC in ${LOCATIONS}
+do
+  hammer location create --name "${LOC}" --organization "${ORG}"
+done
+
+## location add-smpart-proxy #########
+hammer location add-smart-proxy --smart-proxy "capsule-boston.novalocal" --name "boston" 
+
+#####################################################################################################
+## compute-resource ##########################
+## create the RHEV Compute Resource ##########################
+NAME="acme-rhev-munich"
+DESC="RHEV Infrastructure located in munich"
+USER="admin@internal"
+PASS="changeme"
+URL="https://rhevm.example.com/api"
+PROVIDER="Ovirt"
+LOC="munich"
+#
+hammer compute-resource create --name ${NAME}  --description "${DESC}" --user "${USER}" --password "${PASS}" --url "${URL}" --provider "${PROVIDER}" --organizations "${ORG}" --locations "${LOC}"
+#
+hammer compute-resource create \
+--name ${NAME} \
+--description "${DESC}" \
+--user "${USER}" \
+--password "${PASS}" \
+--url "${URL}" \
+--provider "${PROVIDER}" \
+--organizations "${ORG}" \
+--locations "${LOC}"
+
+
+## create the Red Hat Enterprise Linux OpenStack Platform Compute Resource
+NAME="acme-rhelosp-boston"
+DESC="Red Hat Enterprise Linux OpenStack Platform located in boston"
+USER="acmeadmin"
+PASS="changeme"
+URL="http://rhelosp.bos.example.com:5000/v2.0/tokens"
+PROVIDER="Openstack"
+TENANT="r&d"
+LOC="boston"
+hammer compute-resource create \
+--locations "${LOC}" \
+--name "${NAME}" \
+--organizations "${ORG}" \
+--provider "${PROVIDER}" \
+--url "${URL}" \
+--tenant "${TENANT}" \
+--user "${USER}" \
+--password "${PASS}"
+
+## DNS - domains
+#munich
+DOMAIN="example.com"
+LOCATION="munich"
+DNSPROXY="<Replace with Satellite FQDN | satellite.example.com >"
+hammer domain create --name "${DOMAIN}"
+hammer domain update --name "${DOMAIN}" --dns "${DNSPROXY}"
+hammer domain update --name "${DOMAIN}" --organizations "${ORG}"
+hammer domain update --name "${DOMAIN}" --locations "${LOCATION}"
+
+## Subnets #################################
+SUBNETS="296 295 241 258" 
+NAME="VLAN163_500_VddEST_Linux"
+
+SEG=10.92.122;NAME=VLAN296_500_VEST_LINUX
+SEG=10.92.121;NAME=VLAN295_500_VEST_LINUX
+SEG=10.92.189;NAME=VLAN241_500_VEST_LINUX
+SEG=10.92.201;NAME=VLAN258_500_VEST_LINUX
+
+DOMAIN="corp.int"
+LOC="VCS_LINUX"
+DNS_PRIMARY="$SERVER"
+DNS_SECOND="$SERVER"
+SUBNET_MASK="255.255.255.0"
+SUBNET_NETWORK=$SEG".0"
+SUBNET_IPAM_START=$SEG".6"
+SUBNET_IPAM_END=".254"
+CAPSULE_ID=1
+
+hammer subnet create --name ${NAME} --domain-ids "${DOMAIN_ID}" --vlanid ${VLAN_ID} --from ${FROM} --to ${TO} --tftp-id ${TFTP_ID} --network ${NETWORK} --gateway ${GATEWAY} --ipam ${IPAM} --boot-mode ${BOOT_MODE} --dhcp-id ${DHCP_ID} --dns-primary ${DNS_PRIMARY} --dns-secondary ${DNS_SECONDARY} --mask ${MASK} --organizations ${ORG}
+
+## capsule ##################################
+## You can acquire the Red Hat Capsule ID with the command: #########
+hammer capsule list
+hammer capsule content synchronize --id 2
+hammer capsule content synchronization-status --organization $ORG --id 2
+
+
+CAP_ID=`hammer --output csv capsule list --search "gf0vsxmg061t.corp.int" | grep -vi '^Id' | cut -d',' -f1`
+
+## Red Hat Capsule Configuration
+capsule-installer --parent-fqdn "<replace>"\
+--register-in-foreman "true"\
+--foreman-oauth-key "<replace>"\
+--foreman-oauth-secret "<replace>"\
+--pulp-oauth-secret "<replace>"\
+--certs-tar "<replace>"\
+--puppet "true"\
+--puppetca "true"\
+--pulp "true"\
+--qpid-router "true"\
+--reverse-proxy "true"\
+--templates "true"\
+--dns "true"\
+--dns-forwarders "<replace>"\
+--dns-interface "<replace>"\
+--dns-zone "novalocal"\
+--dns-reverse "<replace>"
+
+
+#####################################################################################################
+## import gpg keys
+hammer gpg create --name 'GPG-EPEL7' --organization $ORG --key /tmp/EPEL7.key
+
+#####################################################################################################
+#### Repository work 
+
+## Selecting the Appropriate Repositories
+hammer repository-set enable --organization $ORG --product 'JBoss Enterprise Application Platform' --basearch='x86_64' --releasever='7Server' --name 'JBoss Enterprise Application Platform 6 (RHEL 7 Server) (RPMs)'
+
+hammer repository-set list --organization=$ORG --product-id=1
+hammer repository-set list --product "Red Hat Enterprise Linux Server" --organization "$ORG"
+
+## Synchronize product / Repositories
+hammer product synchronize --organization=$ORG --name 'JBoss Enterprise Application Platform' --async
+hammer product synchronize --organization=$ORG --
+
+hammer product set-sync-plan --organization $ORG --name $REPOS --sync-plan 'daily sync at 3 a.m.'
+
+## create a custom product and repo
+hammer product create --name="$ORG" --organization="$ORG"
+hammer repository create --name="$ORG RPM Repo" --organization="$ORG" --product="$ORG" --content-type='yum' --publish-via-http=true  --url="$CUSTOM_YUM_REPO"
+
+## Importing Thirdparty RPM Packages Without an Existing yum Repository
+hammer repository upload-content --product "$ORG" --organization $ORG --name "$ORG RPM Repo" --path $FILE
+
+# sync all RHEL packages
+hammer product synchronize --name 'Red Hat Enterprise Linux Server' --organization "$ORG" --async
+
+hammer product synchronize --name 'Red Hat Software Collections for RHEL Server'  --organization "$ORG" --async
+
+for package in $(ls -1 /path/to/your/packages/*.rpm); do
+    hammer repository upload-content --organization $ORG --name "$ORG RPM Repo" --product $ORG --path "$package"
+done
+
+hammer product list --organization=$ORG
+hammer product info --id=5                                  
+
+## Importing Puppet Content into Satellite 6
+hammer -v repository upload-content --organization "$ORG" --product $ORG --name "DIBA Puppet Repo" --path acme-motd.tgz
+
+
+#####################################################################################################
+## git repo sync of puppet content
+yum -y install pulp-puppet-module-builder
+mkdir /var/www/html/modules/
+chmod 755 /var/www/html/modules/
+pulp-puppet-module-builder --output-dir=/var/www/html/modules/ --url=git@mygitserver.com:mymodules.git --branch=develop
+
+hammer repository create --name="$ORG Puppet Repo" --organization="$ORG" --product="$ORG" --content-type='puppet' --publish-via-http=true  --url="$CUSTOM_PUPPET_REPO"
+
+hammer repository synchronize --organization "$ORG" --product "$ORG" --async
+
+## sync plan 
+hammer sync-plan create --name 'daily sync at 3 a.m.' --description 'A daily sync plans' --enabled=true --interval daily  --organization "$ORG"  --sync-date '2015-04-15 03:00:00'
+
+#####################################################################################################
+hammer sync-plan list --organization=$ORG
+
+# get all products which have been synced (ignore not_synced)
+for i in $(hammer --csv product list --organization $ORG --per-page 999 | grep -vi '^ID' | grep -vi not_synced | awk -F, {'print $2'}); do 
+ hammer product set-sync-plan --sync-plan 'daily sync at 3 a.m.' --organization $ORG --name $i
+done
+
+## list products in org
+hammer --csv product list --organization $ORG --per-page 999
+
+
+#####################################################################################################
+## Add a Content View & Life Cycle for Docker Containers
+hammer product create --name='Containers' --organization='$ORG'   
+hammer repository create --name='rhel' --organization='$ORG' --product='Containers' --content-type='docker' --url='https://registry.access.redhat.com' --docker-upstream-name='rhel' --publish-via-http="true"
+hammer product synchronize --organization='$ORG' --name='Containers'   
+
+hammer global-parameter set --name "firewall" --value "--disabled"
+hammer global-parameter set --name "selinux" --value "--permissive"
+
+######### Templates
+hammer template list --organization ${ORG}
+hammer template info --id $ID 
+hammer template info --name $NAME 
+
+## get all the info for each template 
+for i in `hammer --csv  template list --organization ${ORG}|cut -f1 -d','`; do hammer template info --id $i; done
+
+hammer global-parameter set --name "firewall" --value "--disabled"
+hammer global-parameter set --name "selinux" --value "--permissive"
+
+#####################################################################################################
+## Clone a Provisioning Template
+hammer template list
+
+# Download the existing Provisioning template
+hammer template dump --name "Satellite Kickstart Default" > "/tmp/tmp.skd"
+
+# Edit the file /tmp/tmp.skd to replace the variables listed above
+# Import the template under the new name
+ORG='$ORG'
+hammer template create --file /tmp/tmp.skd --name "${ORG} Kickstart default" --organizations "${ORG}" --type provision
+
+# the files need to be created first. 
+hammer partition-table create --name ptable-acme-git --os-family "Redhat" --file /tmp/tmp.ptable-acme-git.ptable
+hammer partition-table create --name ptable-acme-os-rhel-server --os-family "Redhat" --file /tmp/tmp.ptable-acme-os-rhel-server.ptable
+
+## Provisioning Setup
+hammer os list | awk -F "|" '/RedHat/ {print $2}' | sed s'/ //' | while read RHEL_Release; do 
+  hammer template add-operatingsystem --name "${ORG} Kickstart default" --operatingsystem "${RHEL_Release}"
+  hammer template add-operatingsystem --name "Kickstart default PXELinux" --operatingsystem "${RHEL_Release}" 
+  hammer template add-operatingsystem --name "Boot disk iPXE - host" --operatingsystem "${RHEL_Release}" 
+  hammer template add-operatingsystem --name "Satellite Kickstart Default User Data" --operatingsystem "${RHEL_Release}"
+done
+
+#####################################################################################################
+## Assign the Red Hat Capsule to a Domain
+#example.com
+DOMAIN=example.com
+LOCATION=munich
+hammer domain update --name "${DOMAIN}" --locations "${LOCATION}"
+
+#dmz.example.com
+DOMAIN=dmz.example.com
+LOCATION=munich-dmz
+hammer domain update --name "${DOMAIN}" --locations "${LOCATION}"
+
+#novalocal
+DOMAIN=novalocal
+LOCATION=boston
+hammer domain update --name "${DOMAIN}" --locations "${LOCATION}"
+
+
+#####################################################################################################
+## Verify the Compute Resource’s Organization and Location
+COMPUTE_RESOURCE="acme-rhelosp-boston"
+hammer compute-resource update --organizations ${ORG} --locations ${LOCATIONS} --name  ${COMPUTE_RESOURCE}
+
+#####################################################################################################
+## Assign the Location to an Organization
+hammer location add-organization --name ${LOC} --organization ${ORG}
+
+FQDN="gf0vsxmg003e.corp.int"
+IP=$(hammer --output csv host list --search "name = ${FQDN}" | awk -F "," "(\$2 ~ /${FQDN}/){print \$5}")
+MAC=$(hammer --output csv host list --search "name = ${FQDN}" | awk -F "," "(\$2 ~ /${FQDN}/) {print \$6}")
+
+
+#####################################################################################################
+## content-view
+################
+hammer content-view list --organization "$ORG"
+hammer content-view version list --organization "$ORG" |sort -k2 -r |grep -v "\-\-"
+hammer content-view version list --organization "$ORG" |sort -k2 -r |grep -v "\-\-"|grep -v "Library" |grep -v lenv
+
+################
+## Promote
+hammer content-view version promote --organization $ORG --content-view "ccv_rhel6_appl" --to-lifecycle-environment "lenv_t" --version "11.0"
+hammer content-view add-repository --organization "$ORG" --repository 'JBoss Enterprise Application Platform 6.4 RHEL 7 Server RPMs x86_64 7Server' --name "cv-app-jbosseap7" --product 'JBoss Enterprise Application Platform'
+
+
+###############
+## hammer content-view remove/delete
+hammer content-view remove --async --content-view-version-ids $VERSION_IDS --organization "$ORG"
+hammer content-view version delete --organization $ORG --content-view "ccv_rhel6_ivr" --version "4.0"
+hammer content-view version delete --id 26
+
+###############
+## create the content view and publish it. 
+hammer content-view create --name "cv-app-git" --description "DESC CV" --organization "$ORG" 
+hammer content-view create --name "cv-app-jbosseap7" --description "JBoss EAP 7 Content View" --organization "$ORG"
+
+# add the RHSCL repo plus filter for git packages only
+hammer content-view add-repository --organization "$ORG" --name "cv-app-git" --repository 'Red Hat Software Collections RPMs for Red Hat Enterprise Linux 7 Server x86_64 7Server' --product 'Red Hat Software Collections for RHEL Server'
+
+# add Puppet modules from $ORG product repo to this CV
+hammer content-view puppet-module add --name git --content-view "cv-app-git" --organization $ORG
+
+# no async anymore, we need to wait until its published to created the CCV
+hammer content-view publish --name "cv-app-git" --organization "$ORG"
+
+## Composite Content View for the gitserver Role
+function get_latest_version {
+CVID=$(hammer --csv content-view list --name $1 --organization ${ORG} | grep -vi '^Content View ID,' | awk -F',' '{print $1}' )
+VID=`hammer content-view version list --content-view-id ${CVID} | awk -F'|' '{print $1}' | sort -n | tac | head -n 1`
+echo $VID
+return 0
+}
+
+RHEL7_CB_VID=`get_latest_version cv-os-rhel-7Server`
+APP_CVID=`get_latest_version cv-app-git`
+hammer content-view create --name "ccv-infra-gitserver" --composite --description "CCV for Infra git server" --organization $ORG --component-ids ${RHEL7_CB_VID},${APP_CVID}
+hammer content-view publish --name "ccv-infra-gitserver" --organization "$ORG"
+
+CVID==$(hammer --csv content-view list --name ccv-infra-gitserver --organization ${ORG} | grep -vi '^Content View ID,' | awk -F',' '{print $1}' )
+VID=`get_latest_version ccv-infra-gitserver`
+hammer content-view version promote --organization "$ORG" --content-view-id ${CVID} --to-lifecycle-environment DEV --id ${VID} --async
+
+## Content View for Docker Profile
+hammer content-view create --name "cv-app-docker" --description "Docker Host Content View" --organization "$ORG" 
+hammer content-view add-repository --organization "$ORG" --repository 'Red Hat Enterprise Linux 7 Server - Extras RPMs x86_64 7Server' --name "cv-app-docker" --product 'Red Hat Enterprise Linux Server' 
+
+hammer content-view filter create --type rpm --name 'docker-package-only' --description 'Only include the docker rpm package' --inclusion=true --organization "$ORG" --content-view "cv-app-docker" --repositories 'Red Hat Enterprise Linux 7 Server - Extras RPMs x86_64 7Server'
+
+hammer content-view filter rule create --name 'docker*' --organization "$ORG" --content-view "cv-app-docker" --content-view-filter 'docker-package-only'
+
+
+
+
+#################################################
+## lifecycle-environment 
+hammer lifecycle-environment list --organization=$ORG
+hammer --csv lifecycle-environment list --organization $ORG|tail -n +2
+
+
+## content-host
+hammer content-host info --name $h --organization $ORG
+hammer content-host info --name gf0vsxmg910i --organization $ORG
+hammer content-host list --organization $ORG
+
+
+#################################################
+## discovery_rule
+hammer discovery_rule list
+hammer discovery_rule delete --id 1
+
+
+#################################################
+## host-collection
+
+hammer host-collection list --organization $ORG
+hammer host-collection create --description "host-collection-rhel6-test" --name hc-rhel6-t --organization $ORG --unlimited-hosts yes
+
+

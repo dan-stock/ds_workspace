@@ -1,0 +1,73 @@
+katello-service restart
+katello-service stop
+katello-service start
+katello-service status|less 
+
+## 
+service goferd restart
+
+
+
+sudo su - postgres -c "psql -d foreman -c 'select label,count(label),state,result from foreman_tasks_tasks where state <> '\''stopped'\'' group by label,state,result ORDER BY label;'"
+
+#############################################
+foreman-rake console
+
+ForemanTasks::Task.where(:state => :paused).where(:label => "      
+").destroy_all
+
+
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::Host::Register").destroy_all      
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::ContentView::Promote").destroy_all
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::ContentViewVersion::Destroy").destroy_all
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::ContentView::Remove").destroy_all
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::CapsuleContent::Sync")
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::CapsuleContent::Sync")
+
+## stop all paused Tasks with label CapsuleGenerateAndSync
+ForemanTasks::Task.where(:state => :paused).where(:label => "Actions::Katello::Repository::CapsuleGenerateAndSync").destroy_all
+
+## stop all pending/error tasks with label CapsuleGenerateAndSync
+ForemanTasks::Task.where(:result => :pending).where(:label => "Actions::Katello::Repository::CapsuleGenerateAndSync").destroy_all
+ForemanTasks::Task.where(:result => :error).where(:label => "Actions::Katello::Repository::CapsuleGenerateAndSync").destroy_all
+ForemanTasks::Task.where(:result => :error).where(:label => "Actions::Katello::ContentView::CapsuleGenerateAndSync").destroy_all
+
+## stop all stopped task with label "Actions::Candlepin::ListenOnCandlepinEvents"
+ForemanTasks::Task.where(['label <> ? AND state <> ?', "Actions::Candlepin::ListenOnCandlepinEvents", "stopped"]).destroy_all
+
+## stop one task based on its ID
+ForemanTasks::Task.find("8f008ad4-a845-47a7-bd80-b5c172754e4e").destroy
+
+
+##############################################
+## vacuuming of the database
+katello-service stop
+service postgresql start
+su - postgres -c 'vacuumdb -f -d foreman'
+katello-service start
+
+
+##############################################
+## get size of db
+du -sh /var/lib/pgsql/
+
+
+############################################## 
+## get a list of tasks from the postgress db
+sudo su - postgres -c "psql -d foreman -c 'select label,count(label),state,result from foreman_tasks_tasks where state <> '\''stopped'\'' group by label,state,result ORDER BY label;'"
+
+## identify the largest tasks 
+su - postgres -c 'psql -d foreman -c\
+     "SELECT foreman_tasks_tasks.label,
+      count(foreman_tasks_tasks.id) tasks_total,
+      count(dynflow_actions.id) actions_total
+      FROM dynflow_actions
+      LEFT JOIN foreman_tasks_tasks
+      ON (foreman_tasks_tasks.external_id = dynflow_actions.execution_plan_uuid)
+      GROUP BY foreman_tasks_tasks.label ORDER BY actions_total DESC LIMIT 30"'
+
+
+### 
+foreman-rake katello:delete_orphaned_content RAILS_ENV=production
+
+
