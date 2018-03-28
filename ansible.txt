@@ -1,0 +1,879 @@
+## ansible ##################################
+ansible all -a 'chmod 755 /tmp/set-bonding.sh' -s
+ansible all -a 'chmod +x /tmp/part_bigdata_hdfs.sh' -s 
+ansible all -a 'ifconfig -a' -v -t ~/var/logs/ansible/
+ansible all -a '/bin/tar xvfz /NetBackup_7.6.0.1_CLIENTS2_small.tar.gz'
+ansible all -a "chronyd -q" -s
+ansible all -a 'date' -o -t ~/var/logs/ansible/
+ansible all -a 'df -h' -s 
+ansible all -a 'uname -a' -s 
+ansible all -a '/opt/DiBaicinga/libexec/check_disk -c 30MB -p /boot' -s 
+ansible all -a "echo 'hello world'"
+ansible all -a '(echo y;sleep 2;echo y;sleep 2;echo <MasterServer>;sleep 2;echo y)|/home/dstock/NetBackup_7.6.0.1_CLIENTS2/install' -s
+ansible all -a '(echo y;sleep 2;echo y;sleep 2;echo <MasterServer>;sleep 2;echo y)|/tmp/NetBackup_7.6.0.1_CLIENTS2/install' -s
+ansible all -a '(echo y;sleep 2;echo y;sleep 2;echo nbu50 ;sleep 2;echo y)|/tmp/NetBackup_7.6.0.1_CLIENTS2/install' -s
+ansible all -a 'ls -l /home/dstock/' 
+ansible all -a 'pushlocalcfg2sat.sh /etc/ntp.conf' -s 
+ansible all -a 'rpm -qa diba-release' 
+ansible all -a 'uptime' 
+ansible all -a '/usr/bin/wget http://gf0vsxmg004p/pub/subscription-manager-1.18.10-1.el6.x86_64.rpm'
+ansible all -a "/usr/local/bin/cgi_vm_reinstall.sh" -s
+ansible all -a '/usr/local/bin/pushlocalcfg2sat.sh /etc/ntp.conf' -s 
+ansible all -a 'yum history' -s -v
+ansible all -a "yum update --assumeno" -s 
+ansible all -B 1800 -P 60 -a "/usr/bin/long_running_operation --do-stuff"
+ansible all -i ./hosts -m fetch -a "src=/tmp/{{ inventory_hostname }}.tar.gz dest=/tmp/{{ inventory_hostname }}.tar.gz"  -k -u sare
+ansible all -i ./hosts -m shell -a 'ls -l /tmp/|grep gf0v' -s -k -u sare
+ansible all -m copy -a "src=~/.bashrc dest=~/.bashrc"
+ansible all -m copy -a "src=files/chrony.conf-lan dest=/etc/chrony.conf" -s
+ansible all -m setup |egrep "nodename|ansible_distribution_version"
+ansible all -m setup --tree /tmp/facts
+ansible all -m template -a "src=~/.bashrc dest=~/.bashrc"
+ansible all -a '(/bin/echo y;/bin/sleep 2;/bin/echo y;/bin/sleep 2;/bin/echo nbu50 ;/bin/sleep 2;/bin/echo y)|/home/dstock/NetBackup_7.6.0.1_CLIENTS2/install' -s 
+ansible all -a 'mkdir /BIGDATA/BACKUP ' 
+ansible all -a 'yum update --assumeno' -s 
+ansible all -a 'yum update --assumeyes' -s 
+ansible all -a "echo 'hello world'"  --sudo
+ansible all -u dstock -o -a 'ls -la /tmp/'
+ansible bd-ada-dev --list-hosts
+ansible -i ~/hosts all -a "service nrpe restart" -s
+ansible -i ~/hosts all -a "service nrpe restart" -s  --check
+ansible -i ~/hosts all -a "subscription-manager attach" -s
+ansible -i ~/hosts all -a "subscription-manager repos --enable=rhel-*-satellite-tools-*-rpms" -s
+ansible -i ~/hosts all -a "yum -y install katello-agent " -s
+ansible -i ~/hosts ipa-px -m copy -a "src=~/.bashrc dest=~/.bashrc"
+ansible -i ~/hosts -o all -l gf0vsxmg001e --list-hosts
+ansible -i ~/hosts -o bd-ada-diba -a 'ls -l /BIGDATA/BACKUP' 
+ansible -i ~/hosts -o bd-ada-diba -a 'ls -l /BIGDATA/BACKUP' -t logs
+ansible -i ~/hosts -o bd-ada-diba -a 'mkdir /BIGDATA/BACKUP' 
+ansible -i ~/hosts -o bd-ada-diba -a 'mkdir /BIGDATA/BACKUP' -s 
+ansible -i hosts -o sat6-dev[0] --list-hosts
+ansible -i hosts -o sat6-dev[-1] --list-hosts
+ansible -i hosts -o sat6-dev[-1] -m setup 
+ansible -i ~/sat-ansible/bin/foreman.py pd_wk_sonder_px_mi_2200_20171213 --list-hosts
+ansible -i ~/sat-ansible/bin/foreman.py xxxx -a " " 
+ansible -k all -a 'mkdir ~/.ssh' 
+ansible -o all -a 'df -h' -s -t logs/
+ansible -o all -a 'facter' -v 
+ansible -o all -a 'free' -v 
+ansible -o all -a 'ls -l /root'
+ansible -o all -a 'ls -l /root' -s
+ansible -o all -a 'uptime' -v 
+ansible -o all -a 'uptime' -vvvv
+ansible -o all -a '/usr/local/bin/update_to_release_ng.sh' -s 
+ansible -o $GRP  -a 'df -h' -v
+ansible -o $GRP  -a 'uptime' -v
+ansible -o $GRP  -a '/usr/local/bin/set_ldap_hostsallowedlogin.sh -l' -v -s 
+ansible -o $GRP --list-hosts
+ansible -o sat6 -s -a 'hammer host list' 
+ansible -o sat6 -s -a 'hammer location list' 
+
+ansible-playbook ###############################
+ansible-playbook auth-keys.yml -s -v
+ansible-playbook -h
+ansible-playbook -h hosts check_system.yml -s -v 
+ansible-playbook -i hosts all-hw --list-hosts
+ansible-playbook -i hosts auth-keys.yml 
+ansible-playbook -i hosts auth-keys.yml -s -v
+ansible-playbook -i hosts check-bg-after-ks.yml -s 
+ansible-playbook -i hosts ./check-bg-after-ks.yml -s -v
+ansible-playbook -i hosts check_bg-after-ks.yml -s -v
+ansible-playbook -i hosts check-bg-after-ks.yml -s -v 
+ansible-playbook -i hosts check_system.yml -s
+ansible-playbook -i hosts check_system.yml -s 
+ansible-playbook -i hosts check_system.yml -s > log/gf0vsxmg906i.rpt 
+ansible-playbook -i hosts check_system.yml -s > logs/gf0vsxmg906i.rpt 
+ansible-playbook -i hosts check_system.yml -s -t logs
+ansible-playbook -i hosts ./check_system.yml -s -v
+ansible-playbook -i hosts check_system.yml -s -v
+ansible-playbook -i hosts check_system.yml -s -v 
+ansible-playbook -i hosts check_system.yml -s -v > logs/2016-02-08-check_system-vms.rpt
+ansible-playbook -i hosts check_system.yml -s -v > logs/check_system.rpt
+ansible-playbook -i hosts check_system.yml -s -v > logs/check_system.rpt 
+ansible-playbook -i hosts check_system.yml -s -v > logs/check_system-vms.rpt
+ansible-playbook -i hosts ./check_system.yml -s -v > logs/check_system.yml
+ansible-playbook -i hosts check_system.yml -s -vv
+ansible-playbook -i hosts check_system.yml -v
+ansible-playbook -i hosts check_system.yml -v -s
+ansible-playbook -i hosts job-distribute-auth-keys.yml 
+ansible-playbook -i hosts job-install-netbackup-BDADA.yml 
+ansible-playbook -i hosts job-restart-ntp.yml -s 
+ansible-playbook -i hosts -k auth-keys.yml
+ansible-playbook -i hosts -k auth-keys.yml 
+ansible-playbook -i hosts -k check_system.yml -s 
+ansible-playbook -i hosts -k check_system.yml -s -v 
+ansible-playbook -i hosts -k job-distribute-auth-keys.yml
+ansible-playbook -i hosts -k -K ply-send-mail.yml
+ansible-playbook -i hosts -k ply-dstock-auth-key.yml
+ansible-playbook -i hosts -k ply-dstock-auth-key.yml 
+ansible-playbook -i hosts -k ply-dstock-auth-key.yml -vvv
+ansible-playbook -i hosts -o all-hw --list-hosts
+ansible-playbook -i hosts ply-send-mail.yml
+ansible-playbook -i inventory/hosts -l tmp playbooks/job-distribute-user-auth-keys.yml --extra-vars "user=dstock" -k 
+ansible-playbook -i -k hosts auth-keys.yml 
+ansible-playbook -i ~/my-hosts ~/stash/sat-ansible/playbooks/job-rh-sys-time_config.yml -u dstock -l ntp --tags time_config -s
+ansible-playbook -i ~/my-hosts ~/stash/sat-ansible/playbooks/job-rh-sys-time-reset-clock.yml -u dstock -l ntp -s
+ansible-playbook -i ~/sat-ansible/bin/foreman.py -l gf01sxos100v.corp.int ~/sat-ansible/playbooks/rh-sys-provision.yml --tags time_config -s --check
+ansible-playbook -i ~/sat-ansible/bin/foreman.py -l $grp ~/sat-ansible/playbooks/job-rh-sys-sudoer.yml -s
+ansible-playbook -i stage-ent-dstock roles/common/tasks/rh-sys-user-add.yml -s
+ansible-playbook -i stage-ent-dstock roles/common/tasks/rh-sys-user-add.yml -s tags add_groups
+ansible-playbook -i stage-ent-dstock site.yml --limit gf0vsxmg910i --tags resolv -s
+ansible-playbook -i stage-ent-dstock site.yml -s tags add_groups
+ansible-playbook -i tmp -k -K ply-send-mail.yml
+ansible-playbook  job-restart-ntp.yml -s
+ansible-playbook  job-restart-ntp.yml -s 
+ansible-playbook -k job-distribute-auth-keys.yml
+ansible-playbook -k ply-dstock-auth-key.yml 
+ansible-playbook --list-hosts
+ansible-playbook -o test pply-send-mail.yml
+ansible-playbook ply-send-mail.yml --list-hosts
+ansible-playbook ply-test.yml
+ansible-playbook site.yml --ask-vault-pass
+ansible-playbook site.yml --vault-password-file ~/.vault_pass.py
+ansible-playbook site.yml --vault-password-file ~/.vault_pass.txt
+ansible-playbook -s ply-test.yml 
+ansible-playbook -s ply-test.yml --list-hosts
+ansible-playbook test --list-hosts
+ansible-playbook test_upgrade.yml --list-tasks
+
+ansible-vault ##################################
+ansible-vault create foo.yml
+ansible-vault decrypt foo.yml bar.yml baz.yml
+ansible-vault edit foo.yml
+ansible-vault encrypt foo.yml bar.yml baz.yml
+ansible-vault rekey foo.yml bar.yml baz.yml
+ansible-vault view foo.yml bar.yml baz.yml
+ansible --version
+
+for ############# 
+for i in `ansible -i BDADA.hosts all --list-hosts`; do echo $i; done 
+for i in `ansible -i BDADA.hosts all --list-hosts|grep -v anw|grep -v type`; do echo $i; done 
+for i in `ansible -i BDADA.hosts all --list-hosts|grep -v anw|grep -v type`; do grep $i /ConfigData/data/vsphere-info.data >> vsphere-info.rpt; done 
+for i in `ansible -i BDADA.hosts dataNode  --list-hosts`; do echo $i; done 
+for i in `ansible -i BDADA.hosts dataNode  --list-hosts`; do echo $i; ssh $i df -h; done 
+for i in `ansible -i BDADA.hosts --list-hosts`; do grep -i $i /ConfigData/data/vsphere-info.data;done 
+for i in `ansible -i BDADA.hosts TerminalServer --list-hosts`; do echo $i; ssh $i df -h; done 
+for i in `ansible -o all-hw --list-hosts|cut -f1 -d'.'`; do echo $i ; rh $i; done
+for i in `ansible -o all-vm --list-hosts|cut -f1 -d'.'`; do echo $i ; rh $i; done
+for i in $h; do A=`ansible $i -m setup |egrep "macaddress"|tail -1|awk '{print $2}'`; echo $i,$A ; done
+for i in $h; do ansible -i ~/my-hosts $i -m setup -a "filter=facter_blockdevice_*_size" -o >> ~/var/$i_factoer_blockdevice; do
+
+rest #################
+grep : /var/foreman_ansible_inventory/cache/foreman.index
+H=`ansible -i hosts -o all --list-hosts`
+h=`ansible -i ~/my-hosts tmp --list-hosts|grep -v host`
+h=`ansible -o all-vm --list-hosts`
+HOSTS=`ansible -o $GRP --list-hosts`
+l /etc/ansible/ansible.cfg
+tail ~/var/logs/ansible.log 
+
+
+###########################
+Behavioral inventory parameters:
+    ansible_ssh_host
+    ansible_ssh_port
+    ansible_ssh_user
+    ansible_ssh_pass
+    ansible_sudo_pass
+    ansible_connection
+    ansible_ssh_private_key_file
+    ansible_python_interpreter
+    ansible_*_interpreter
+
+
+###########################
+Playbooks
+## ------------------------
+Playbooks consist of a list of one or more 'plays' and/or inclusions:
+---
+- include: playbook.yml
+- <play>
+- ...
+
+
+###########################
+Plays
+## ------------------------
+Plays consist of play metadata and a sequence of task and handler definitions, and roles.
+- hosts: webservers
+  remote_user: root
+  sudo: yes
+  sudo_user: postgress
+  su: yes
+  su_user: exim
+  gather_facts: no
+  accelerate: no
+  accelerate_port: 5099
+  any_errors_fatal: yes
+  max_fail_percentage: 30
+  connection: local
+  serial: 5
+  vars:
+    http_port: 80
+  vars_files:
+    - "vars.yml"
+    - [ "try-first.yml", "try-second-.yml" ]
+  vars_prompt:
+    - name: "my_password2"
+      prompt: "Enter password2"
+      default: "secret"
+      private: yes
+      encrypt: "md5_crypt"
+      confirm: yes
+      salt: 1234
+      salt_size: 8
+  tags: 
+    - stuff
+    - nonsence
+  pre_tasks:
+    - <task>
+    - ...
+  roles:
+    - common
+    - { role: common, port: 5000, when: "bar == 'Baz'", tags :[one, two] }
+    - { role: common, when: month == 'Jan' }
+    - ...
+  tasks:
+    - include: tasks.yaml
+    - include: tasks.yaml foo=bar baz=wibble
+    - include: tasks.yaml
+      vars:
+        foo: aaa 
+        baz:
+          - z
+          - y
+    - { include: tasks.yaml, foo: zzz, baz: [a,b]}
+    - include: tasks.yaml
+      when: day == 'Thursday'
+    - <task>
+    - ...
+  post_tasks:
+    - <task>
+    - ...
+  handlers:
+    - include: handlers.yml
+    - <task>
+    - ...
+
+
+
+###########################
+Task definitions
+## ------------------------
+Each task definition is a list of items, normally including at least a name and a module invocation:
+- name: task
+  remote_user: apache
+  sudo: yes
+  sudo_user: postgress
+  sudo_pass: wibble
+  su: yes
+  su_user: exim
+  ignore_errors: True
+  delegate_to: 127.0.0.1
+  async: 45
+  poll: 5
+  always_run: no
+  run_once: false
+  meta: flush_handlers
+  no_log: true
+  environment: <hash>
+  environment:
+    var1: val1
+    var2: val2
+  tags: 
+    - stuff
+    - nonsence
+  <module>: src=template.j2 dest=/etc/foo.conf
+  action: <module>, src=template.j2 dest=/etc/foo.conf
+  action: <module>
+  args:
+      src=template.j2
+      dest=/etc/foo.conf
+  local_action: <module> /usr/bin/take_out_of_pool {{ inventory_hostname }}
+  when: ansible_os_family == "Debian"
+  register: result
+  failed_when: "'FAILED' in result.stderr"
+  changed_when: result.rc != 2
+  notify:
+    - restart apache
+
+
+###########################
+Roles
+## ------------------------
+Directory structure:
+roles/
+   common/
+     tasks/
+       main.yml
+     handlers/
+       main.yml
+     vars/
+       main.yml
+     meta/
+       main.yml
+     defaults/
+       main.yml
+     files/
+     templates/
+     library/
+
+cd roles
+## ------------------------
+mkdir $ROLE
+mkdir $ROLE/tasks
+touch $ROLE/tasks/main.yml
+mkdir $ROLE/handlers
+touch $ROLE/handlers/main.yml
+mkdir $ROLE/vars
+touch $ROLE/vars/main.yml
+mkdir $ROLE/meta
+touch $ROLE/meta/main.yml
+mkdir $ROLE/defaults/
+touch $ROLE/defaults/main.yml
+mkdir $ROLE/files
+mkdir $ROLE/templates
+mkdir $ROLE/library
+
+
+
+
+###########################
+Variables
+## ------------------------
+Names: letters, digits, underscores; starting with a letter.
+
+    {{ var }}
+    {{ var["key1"]["key2"]}}
+    {{ var.key1.key2 }}
+    {{ list[0] }}
+
+YAML requires an item starting with a variable substitution to be quoted.
+
+## ------------------------
+Sources:
+    Highest priority:
+        --extra-vars on the command line
+    General:
+        vars component of a playbook
+        From files referenced by vars_file in a playbook
+        From included files (incl. roles)
+        Parameters passed to includes
+        register: in tasks
+    Lower priority:
+        Inventory (set on host or group)
+    Lower priority:
+        Facts (see below)
+        Any /etc/ansible/facts.d/filename.fact on managed machines (sets variables with `ansible_local.filename. prefix)
+    Lowest priority
+        Role defaults (from defaults/main.yml)
+
+
+## ------------------------
+Built-in:
+    hostvars (e.g. hostvars[other.example.com][...])
+    group_names (groups containing current host)
+    groups (all groups and hosts in the inventory)
+    inventory_hostname (current host as in inventory)
+    inventory_hostname_short (first component of inventory_hostname)
+    play_hosts (hostnames in scope for current play)
+    inventory_dir (location of the inventory)
+    inventoty_file (name of the inventory)
+
+
+## ------------------------
+Facts:
+Run ansible hostname -m setup, but in particular:
+
+    ansible_distribution
+    ansible_distribution_release
+    ansible_distribution_version
+    ansible_fqdn
+    ansible_hostname
+    ansible_os_family
+    ansible_pkg_mgr
+    ansible_default_ipv4.address
+    ansible_default_ipv6.address
+
+
+## ------------------------
+Content of 'registered' variables:
+Depends on module. Typically includes:
+
+    .rc
+    .stdout
+    .stdout_lines
+    .changed
+    .msg (following failure)
+    .results (when used in a loop)
+
+See also failed, changed, etc filters.
+When used in a loop the result element is a list containing all responses from the module.
+
+## ------------------------
+Additionally available in templates:
+
+    ansible_managed: string containing the information below
+    template_host: node name of the template machine
+    template_uid: the owner
+    template_path: absolute path of the template
+    template_fullpath: the absolute path of the template
+    template_run_date: the date that the template was rendered
+
+
+###########################
+Filters
+
+## ------------------------
+    {{ var | to_nice_json }}
+    {{ var | to_json }}
+    {{ var | from_json }}
+    {{ var | to_nice_yml }}
+    {{ var | to_yml }}
+    {{ var | from_yml }}
+    {{ result | failed }}
+    {{ result | changed }}
+    {{ result | success }}
+    {{ result | skipped }}
+    {{ var | manditory }}
+    {{ var | default(5) }}
+    {{ list1 | unique }}
+    {{ list1 | union(list2) }}
+    {{ list1 | intersect(list2) }}
+    {{ list1 | difference(list2) }}
+    {{ list1 | symmetric_difference(list2) }}
+    {{ ver1 | version_compare(ver2, operator='>=', strict=True }}
+    {{ list | random }}
+    {{ number | random }}
+    {{ number | random(start=1, step=10) }}
+    {{ list | join(" ") }}
+    {{ path | basename }}
+    {{ path | dirname }}
+    {{ path | expanduser }}
+    {{ path | realpath }}
+    {{ var | b64decode }}
+    {{ var | b64encode }}
+    {{ filename | md5 }}
+    {{ var | bool }}
+    {{ var | int }}
+    {{ var | quote }}
+    {{ var | md5 }}
+    {{ var | fileglob }}
+    {{ var | match }}
+    {{ var | search }}
+    {{ var | regex }}
+    {{ var | regexp_replace('from', 'to' )}}
+
+
+
+###########################
+Lookups
+## ------------------------
+Lookups are evaluated on the control machine.
+
+    {{ lookup('file', '/etc/foo.txt') }}
+    {{ lookup('password', '/tmp/passwordfile length=20 chars=ascii_letters,digits') }}
+    {{ lookup('env','HOME') }}
+    {{ lookup('pipe','date') }}
+    {{ lookup('redis_kv', 'redis://localhost:6379,somekey') }}
+    {{ lookup('dnstxt', 'example.com') }}
+    {{ lookup('template', './some_template.j2') }}
+
+Lookups can be assigned to variables and will be evaluated each time the variable is used.
+
+Lookup plugins also support loop iteration (see below).
+
+
+
+###########################
+## ------------------------
+Conditions
+when: <condition>, where condition is:
+
+    var == "Vaue", var >= 5, etc.
+    var, where var coreces to boolean (yes, true, True, TRUE)
+    var is defined, var is not defined
+    <condition1> and <condition2> (also or?)
+
+Combined with with_items, the when statement is processed for each item.
+
+when can also be applied to includes and roles. Conditional Imports and variable substitution in file and template names can avoid the need for explicit conditionals.
+
+
+
+
+###########################
+## ------------------------
+Loops
+In addition the source code implies the availability of the following which don't seem to be mentioned in the documentation: csvfile, etcd, inventory_hostname.
+Standard:
+
+- user: name={{ item }} state=present groups=wheel
+  with_items:
+    - testuser1
+    - testuser2
+   
+- name: add several users
+  user: name={{ item.name }} state=present groups={{ item.groups }}
+  with_items:
+    - { name: 'testuser1', groups: 'wheel' }
+    - { name: 'testuser2', groups: 'root' }
+
+  with_items: somelist
+
+
+
+Nested:
+
+- mysql_user: name={{ item[0] }} priv={{ item[1] }}.*:ALL append_privs=yes password=foo               
+  with_nested:
+    - [ 'alice', 'bob', 'eve' ]
+    - [ 'clientdb', 'employeedb', 'providerdb' ]
+
+## ------------------------
+Over hashes:
+Given
+
+---
+users:
+  alice:
+    name: Alice Appleworth
+    telephone: 123-456-7890
+  bob:
+    name: Bob Bananarama
+    telephone: 987-654-3210
+    
+tasks:
+  - name: Print phone records
+    debug: msg="User {{ item.key }} is {{ item.value.name }} 
+                     ({{ item.value.telephone }})"
+    with_dict: users
+
+
+## -------
+Fileglob:
+
+- copy: src={{ item }} dest=/etc/fooapp/ owner=root mode=600
+  with_fileglob:
+    - /playbooks/files/fooapp/*
+
+In a role, relative paths resolve relative to the roles/<rolename>/files directory.
+
+
+
+## -------
+With content of file:
+
+(see example for authorized_key module)
+
+- authorized_key: user=deploy key="{{ item }}"
+  with_file:
+    - public_keys/doe-jane
+    - public_keys/doe-john
+
+See also the file lookup when the content of a file is needed.
+
+## -------
+Parallel sets of data:
+
+Given
+
+---
+alpha: [ 'a', 'b', 'c', 'd' ]
+numbers:  [ 1, 2, 3, 4 ]
+
+- debug: msg="{{ item.0 }} and {{ item.1 }}"
+  with_together:
+    - alpha
+    - numbers
+
+## -------
+Subelements:
+
+Given
+
+---
+users:
+  - name: alice
+    authorized:
+      - /tmp/alice/onekey.pub
+      - /tmp/alice/twokey.pub
+  - name: bob
+    authorized:
+      - /tmp/bob/id_rsa.pub
+
+- authorized_key: "user={{ item.0.name }} 
+                   key='{{ lookup('file', item.1) }}'"
+  with_subelements:
+     - users
+     - authorized
+
+## -------
+Integer sequence:
+
+Decimal, hexadecimal (0x3f8) or octal (0600)
+
+- user: name={{ item }} state=present groups=evens
+  with_sequence: start=0 end=32 format=testuser%02x
+      
+  with_sequence: start=4 end=16 stride=2
+      
+  with_sequence: count=4
+
+## -------
+Random choice:
+
+- debug: msg={{ item }}
+  with_random_choice:
+     - "go through the door"
+     - "drink from the goblet"
+     - "press the red button"
+     - "do nothing"
+
+## -------
+Do-Until:
+
+- action: shell /usr/bin/foo
+  register: result
+  until: result.stdout.find("all systems go") != -1
+  retries: 5
+  delay: 10
+
+## -------
+Results of a local program:
+
+- name: Example of looping over a command result
+  shell: /usr/bin/frobnicate {{ item }}
+  with_lines: /usr/bin/frobnications_per_host 
+                       --param {{ inventory_hostname }}
+
+To loop over the results of a remote program, use register: result and then with_items: result.stdout_lines in a subsequent task.
+Indexed list:
+
+- name: indexed loop demo
+  debug: msg="at array position {{ item.0 }} there is 
+                                     a value {{ item.1 }}"
+  with_indexed_items: some_list
+
+## -------
+Flattened list:
+
+---
+# file: roles/foo/vars/main.yml
+packages_base:
+  - [ 'foo-package', 'bar-package' ]
+packages_apps:
+  - [ ['one-package', 'two-package' ]]
+  - [ ['red-package'], ['blue-package']]
+  
+- name: flattened loop demo
+  yum: name={{ item }} state=installed
+  with_flattened:
+    - packages_base
+    - packages_apps      
+
+## -------
+First found:
+
+- name: template a file
+  template: src={{ item }} dest=/etc/myapp/foo.conf
+  with_first_found:
+    - files:
+        - {{ ansible_distribution }}.conf
+        - default.conf
+      paths:
+         - search_location_one/somedir/
+         - /opt/other_location/somedir/
+
+###########################
+Tags
+
+Both plays and tasks support a tags: attribute.
+
+- template: src=templates/src.j2 dest=/etc/foo.conf
+  tags:
+    - configuration
+
+Tags can be applied to roles and includes (effectively tagging all included tasks)
+
+## -------
+roles:
+    - { role: webserver, port: 5000, tags: [ 'web', 'foo' ] }
+
+- include: foo.yml tags=web,foo
+
+To select by tag:
+
+ansible-playbook example.yml --tags "configuration,packages"
+ansible-playbook example.yml --skip-tags "notification"
+
+###########################
+Command lines
+## -----------------------
+ansible
+
+Usage: ansible <host-pattern> [options]
+
+Options:
+  -a MODULE_ARGS, --args=MODULE_ARGS
+                        module arguments
+  -k, --ask-pass        ask for SSH password
+  --ask-su-pass         ask for su password
+  -K, --ask-sudo-pass   ask for sudo password
+  --ask-vault-pass      ask for vault password
+  -B SECONDS, --background=SECONDS
+                        run asynchronously, failing after X seconds
+                        (default=N/A)
+  -C, --check           don't make any changes; instead, try to predict some
+                        of the changes that may occur
+  -c CONNECTION, --connection=CONNECTION
+                        connection type to use (default=smart)
+  -f FORKS, --forks=FORKS
+                        specify number of parallel processes to use
+                        (default=5)
+  -h, --help            show this help message and exit
+  -i INVENTORY, --inventory-file=INVENTORY
+                        specify inventory host file
+                        (default=/etc/ansible/hosts)
+  -l SUBSET, --limit=SUBSET
+                        further limit selected hosts to an additional pattern
+  --list-hosts          outputs a list of matching hosts; does not execute
+                        anything else
+  -m MODULE_NAME, --module-name=MODULE_NAME
+                        module name to execute (default=command)
+  -M MODULE_PATH, --module-path=MODULE_PATH
+                        specify path(s) to module library
+                        (default=/usr/share/ansible)
+  -o, --one-line        condense output
+  -P POLL_INTERVAL, --poll=POLL_INTERVAL
+                        set the poll interval if using -B (default=15)
+  --private-key=PRIVATE_KEY_FILE
+                        use this file to authenticate the connection
+  -S, --su              run operations with su
+  -R SU_USER, --su-user=SU_USER
+                        run operations with su as this user (default=root)
+  -s, --sudo            run operations with sudo (nopasswd)
+  -U SUDO_USER, --sudo-user=SUDO_USER
+                        desired sudo user (default=root)
+  -T TIMEOUT, --timeout=TIMEOUT
+                        override the SSH timeout in seconds (default=10)
+  -t TREE, --tree=TREE  log output to this directory
+  -u REMOTE_USER, --user=REMOTE_USER
+                        connect as this user (default=jw35)
+  --vault-password-file=VAULT_PASSWORD_FILE
+                        vault password file
+  -v, --verbose         verbose mode (-vvv for more, -vvvv to enable
+                        connection debugging)
+  --version             show program's version number and exit
+
+## -----------------------
+ansible-playbook
+
+Usage: ansible-playbook playbook.yml
+
+Options:
+  -k, --ask-pass        ask for SSH password
+  --ask-su-pass         ask for su password
+  -K, --ask-sudo-pass   ask for sudo password
+  --ask-vault-pass      ask for vault password
+  -C, --check           don't make any changes; instead, try to predict some
+                        of the changes that may occur
+  -c CONNECTION, --connection=CONNECTION
+                        connection type to use (default=smart)
+  -D, --diff            when changing (small) files and templates, show the
+                        differences in those files; works great with --check
+  -e EXTRA_VARS, --extra-vars=EXTRA_VARS
+                        set additional variables as key=value or YAML/JSON
+  -f FORKS, --forks=FORKS
+                        specify number of parallel processes to use
+                        (default=5)
+  -h, --help            show this help message and exit
+  -i INVENTORY, --inventory-file=INVENTORY
+                        specify inventory host file
+                        (default=/etc/ansible/hosts)
+  -l SUBSET, --limit=SUBSET
+                        further limit selected hosts to an additional pattern
+  --list-hosts          outputs a list of matching hosts; does not execute
+                        anything else
+  --list-tasks          list all tasks that would be executed
+  -M MODULE_PATH, --module-path=MODULE_PATH
+                        specify path(s) to module library
+                        (default=/usr/share/ansible)
+  --private-key=PRIVATE_KEY_FILE
+                        use this file to authenticate the connection
+  --skip-tags=SKIP_TAGS
+                        only run plays and tasks whose tags do not match these
+                        values
+  --start-at-task=START_AT
+                        start the playbook at the task matching this name
+  --step                one-step-at-a-time: confirm each task before running
+  -S, --su              run operations with su
+  -R SU_USER, --su-user=SU_USER
+                        run operations with su as this user (default=root)
+  -s, --sudo            run operations with sudo (nopasswd)
+  -U SUDO_USER, --sudo-user=SUDO_USER
+                        desired sudo user (default=root)
+  --syntax-check        perform a syntax check on the playbook, but do not
+                        execute it
+  -t TAGS, --tags=TAGS  only run plays and tasks tagged with these values
+  -T TIMEOUT, --timeout=TIMEOUT
+                        override the SSH timeout in seconds (default=10)
+  -u REMOTE_USER, --user=REMOTE_USER
+                        connect as this user (default=jw35)
+  --vault-password-file=VAULT_PASSWORD_FILE
+                        vault password file
+  -v, --verbose         verbose mode (-vvv for more, -vvvv to enable
+                        connection debugging)
+  --version             show program's version number and exit
+
+## -----------------------
+ansible-vault
+
+playbooks_vault.html
+
+Usage: ansible-vault [create|decrypt|edit|encrypt|rekey] [--help] [options] file_name
+
+Options:
+  -h, --help  show this help message and exit
+
+See 'ansible-vault <command> --help' for more information on a specific command.
+
+## -----------------------
+ansible-doc
+
+Usage: ansible-doc [options] [module...]
+
+Show Ansible module documentation
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -M MODULE_PATH, --module-path=MODULE_PATH
+                             Ansible modules/ directory
+  -l, --list            List available modules
+  -s, --snippet         Show playbook snippet for specified module(s)
+  -v                    Show version number and exit
+
+## -----------------------
+ansible-galaxy
+
+Usage: ansible-galaxy [init|info|install|list|remove] [--help] [options] ...
+
+Options:
+  -h, --help  show this help message and exit
+
+  See 'ansible-galaxy <command> --help' for more information on a
+  specific command 
+
+## -----------------------
+ansible-pull
+
+Usage: ansible-pull [options] [playbook.yml]
+
+ansible-pull: error: URL for repository not specified, use -h for help
+
+
+:
+
+
+
