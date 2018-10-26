@@ -1,0 +1,64 @@
+{
+    "platform": "openshift",
+    "application": "$APP",
+    "environment": "prd",
+    "subject": "compliance",
+    "timestamp": "$CURRENTDATETIME",
+    "foundation": {
+        "security_baseline": {
+            "RMM_mapping": "FC01",
+            "repo": "url",
+            "commit_hash": "iaudshfiuahdfiuhediuhefuhew"
+        },
+        "bia": {
+            "c": 3,
+            "i": 3,
+            "a": 3
+        }
+    },
+    "patch_management": {
+        "status": {
+            "cluster": [
+                {
+                    "name": "$CLUSTER",
+                    "hosts": [
+                        {
+                            "name": "$HOSTNAME",
+                            "atomic": {
+                                "active_ref": "$VALUE",
+                                "active_hash": "$VALUE",
+                                "active_date": "$VALUE",
+                                "alternative_ref": "$VALUE",
+                                "alternative_hash": "$VALUE",
+                                "alternative_date": "$VALUE"
+                            },
+                            "images": [
+                                {
+                                    "company": "$VENDOR or ING",
+                                    "image_name": "$IMAGE_NAME",
+                                    "hash_or_digest": "$VALUE",
+                                    "version": "$VALUE",
+                                    "deploy_date": "VALUE"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "inventory": {
+            "atomic": {
+                "ref": "$VALUE",
+                "hash": "$VALUE",
+                "compase_date": "$VALUE"
+            },
+            "image": {
+                "company": "$VENDOR or ING",
+                "image_name": "$IMAGE_NAME",
+                "hash_or_digest": "$VALUE",
+                "version": "$VALUE",
+                "creation_date": "VALUE"
+            }
+        }
+    }
+}
