@@ -1,4 +1,22 @@
 BASE='/mnt/d'
+# oh-my-zsh 
+export ZSH=$BASE/stash/ds-base/ohmyzsh-master
+ZSH_THEME="bureau"
+plugins=(git python pip history extract vscode ansible battery colored-man-pages docker-compose)
+source $ZSH/oh-my-zsh.sh
+
+# HISTORY
+HISTSIZE=10000
+export HISTSIZE
+export HISTTIMEFORMAT="%F %T "
+HISTFILE=~/HISTORY/history-`date '+%Y.%m.%d_%H%M'`
+export HISTFILE
+export PROMPT_COMMAND="history -a"
+
+## set python env
+export PIP_REQUIRE_VIRTUALENV=true
+source $BASE/var/py3/bin/activate
+
 # scripts
 alias a="$BASE/stash/ds-scripts/new-grep-cookbook.sh all"
 alias hd="$BASE/stash/ds-scripts/hd.sh"
